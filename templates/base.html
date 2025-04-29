@@ -1,0 +1,44 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SpendSens{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'finance/css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- <link rel="icon" href="{% static 'med/img/base/icon.png' %}" type="image/png"/> -->
+    {% block style %} {% endblock %}
+</head>
+
+<body>
+    <header>
+        <h1>SpendSens</h1>
+
+        <button class="theme-toggle" aria-label="Toggle theme">
+            <i class="fas fa-sun sun-icon"></i>
+            <i class="fas fa-moon moon-icon"></i>
+        </button>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li><a href="{% url 'new_transaction' %}">Add Expense</a></li>
+            <li><a>Expenses</a></li>
+            <li><a>Reports</a></li>
+        </ul>
+    </nav>
+    <div class="container">
+        <div class="content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+    <footer>
+        <p>&copy; {% now "Y" %} SpendSens Finance trecker. All rights reserved.</p>
+    </footer>
+    
+    <script src="{% static 'finance/js/theme-toggle.js' %}"></script>
+</body>
+</html>

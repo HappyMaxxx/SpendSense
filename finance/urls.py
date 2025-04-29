@@ -4,6 +4,6 @@ from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
-	path('', views.index, name='index'),
-    path('trans', views.make_new_transaction, name='make_new_transaction'),
+	path('', views.index, name='home'),
+    path('trans', views.make_new_transaction, name='new_transaction'),
 ]
