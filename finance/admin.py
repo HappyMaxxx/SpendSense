@@ -4,7 +4,7 @@ from .models import *
 
 
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ('amount', 'category', 'description', 'time_create', 'time_update')
+    list_display = ('user', 'amount', 'category', 'description', 'time_create', 'time_update')
     ordering = ('-time_create',)
     list_display_links = ('amount', 'category')
     list_filter = ('category',)

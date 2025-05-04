@@ -258,3 +258,44 @@ tr:hover {
     justify-content: center;
     align-items: center;
 }
+
+/* Стилі для всіх інпутів */
+.form-control {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: -20px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+input[name="username"],
+input[name="email"] {
+    height: 50px;
+    font-size: 18px;
+}
+
+.password-container {
+    position: relative;
+    width: 100%;
+}
+
+.password-container input {
+    height: 50px;
+    font-size: 16px;
+    padding-right: 40px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.password-eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 42%;
+    cursor: pointer;
+    color: #666;
+}
+
+#submitLink {
+    margin-top: 0 !important;
+}

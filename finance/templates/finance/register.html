@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<form method="post" id="registerForm">
+    {% csrf_token %}
+
+    {% for field in form %}
+        {% if field.name == "password1" %}
+            <div class="password-container">
+                <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" placeholder="Password *" required>
+                <i id="togglePassword" class="fas fa-eye password-eye-icon"></i>
+            </div>
+        {% elif field.name == "password2" %}
+            <div class="password-container">
+                <input type="password" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" placeholder="Confirm password *" required>
+                <i id="togglePasswordConfirm" class="fas fa-eye password-eye-icon"></i>
+            </div>
+        {% elif field.name == "username" %}
+            <input type="text" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" placeholder="Username *" value="{{ field.value|default:'' }}" required>
+        {% elif field.name == "email" %}
+            <input type="email" name="{{ field.name }}" id="{{ field.id_for_label }}" class="form-control" placeholder="Email *" value="{{ field.value|default:'' }}" required>
+        {% else %}
+            {{ field }}
+        {% endif %}
+        <div class="form-error" id="{{ field.id_for_label }}-error">
+            {{ field.errors }}
+        </div>
+    {% endfor %}
+
+    <div class="center_button" id="submitLink">
+        <a id="submitLink">
+            <button>Register</button>
+        </a>
+    </div>
+
+    <p>Already have an account? <a href="{% url 'auth' %}">Login</a></p>
+</form>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('registerForm');
+        const submitLink = document.getElementById('submitLink');
+        const passwordInput = document.getElementById('id_password1');
+        const passwordStrength = document.getElementById('passwordStrength');
+        const togglePassword = document.getElementById('togglePassword');
+        const passwordConfirmInput = document.getElementById('id_password2');
+        const togglePasswordConfirm = document.getElementById('togglePasswordConfirm');
+        const usernameInput = document.getElementById('id_username');
+        const usernameError = document.getElementById('id_username-error');
+        console.log('usernameInput:', usernameInput);
+
+        form.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitLink.click();
+            }
+        });
+
+        submitLink.addEventListener('click', function(event) {
+            event.preventDefault();
+            form.submit();
+        });
+
+        usernameInput.addEventListener('change', function () {
+            const username = usernameInput.value;
+            console.log(username);
+            if (username) {
+                fetch('{% url "check_username" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ username: username })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        usernameError.textContent = data.error;
+                        usernameError.style.color = 'red';
+                    } else {
+                        usernameError.textContent = '';
+                    }
+                });
+            } else {
+                usernameError.textContent = '';
+            }
+        });
+
+        togglePassword.addEventListener('click', function() {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            togglePassword.classList.toggle('fa-eye-slash');
+        });
+
+        togglePasswordConfirm.addEventListener('click', function() {
+            const type = passwordConfirmInput.type === 'password' ? 'text' : 'password';
+            passwordConfirmInput.type = type;
+            togglePasswordConfirm.classList.toggle('fa-eye-slash');
+        });
+    });
+</script>
+{% endblock %}

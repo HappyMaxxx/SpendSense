@@ -5,5 +5,10 @@ from . import views
 
 urlpatterns = [
 	path('', views.index, name='home'),
-    path('trans', views.make_new_transaction, name='new_transaction'),
+    path('trans/', views.MakeNewTransaction.as_view(), name='new_transaction'),
+    path('register/', views.RegisterUser.as_view(), name='register'),
+    path('login/', views.LoginUser.as_view(), name='auth'),
+    path('logout/', views.LogoutUser.as_view(), name='logout'),
+    # API endpoints
+    path('api/check_username/', views.check_username, name='check_username'),
 ]

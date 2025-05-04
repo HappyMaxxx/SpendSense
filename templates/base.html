@@ -21,14 +21,21 @@
             <i class="fas fa-moon moon-icon"></i>
         </button>
     </header>
+
     <nav>
         <ul>
             <li><a href="{% url 'home' %}">Home</a></li>
             <li><a href="{% url 'new_transaction' %}">Add Expense</a></li>
             <li><a>Expenses</a></li>
             <li><a>Reports</a></li>
+            {% if user.is_authenticated %}
+                <li><a href="{% url 'logout' %}">Profile</a></li>
+            {% else %}
+                <li><a href="{% url 'auth' %}">Login</a></li>
+            {% endif %}
         </ul>
     </nav>
+
     <div class="container">
         <div class="content">
             {% block content %}

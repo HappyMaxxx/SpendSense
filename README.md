@@ -9,6 +9,8 @@
 - View budget summaries and insights
 - MongoDB for data storage
 - Redis for caching and performance
+- Celery for asynchronous task processing
+- Flower for monitoring Celery tasks
 - Dockerized setup for consistent environments
 
 ## 📋 Prerequisites
@@ -41,22 +43,21 @@ DEBUG=False
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-> **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g., using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
+> **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g.,_using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
 
 ### 3. Collect Static Files
 
 Prepare static assets for production:
 
-
 ```bash
 python3 manage.py collectstatic # for Linux/macOS
-
+# or
 python manage.py collectstatic # for Windows
 ```
 
 ### 4. Build and Run with Docker
 
-Build the Docker images and start the Django, MongoDB, and Redis containers:
+Build the Docker images and start the Django, MongoDB, Redis, Celery, and Flower containers:
 
 ```bash
 docker-compose up --build
@@ -65,6 +66,7 @@ docker-compose up --build
 > **Note**: On Linux, you may need `sudo` depending on your Docker setup. On Windows, use Docker Desktop and run the command in PowerShell or CMD.
 
 The application will be available at: [http://localhost:8000](http://localhost:8000).
+The Flower dashboard for monitoring Celery tasks will be available at: [http://localhost:5555](http://localhost:5555).
 
 ## 🛑 Stopping and Cleaning Up
 
@@ -77,6 +79,7 @@ docker-compose down
 ```
 
 ### Remove Containers and Volumes
+
 To stop containers and remove them along with the MongoDB data volume:
 
 ```bash
@@ -93,11 +96,13 @@ docker-compose down -v
 
 ## 🐳 Docker Compose Configuration
 
-The `docker-compose.yml` defines three services:
+The `docker-compose.yml` defines five services:
 
 - **web**: The Django application, built from the project directory, exposed on port `8000`.
 - **db**: MongoDB, using the `mongo:latest` image, with data persisted in the `mongo_data` volume, exposed on port `27017`.
 - **redis**: Redis, using the `redis:latest` image, exposed on port `6379`.
+- **celery**: Celery worker for asynchronous task processing, built from the project directory, dependent on Redis and MongoDB.
+- **flower**: Flower dashboard for monitoring Celery tasks, using the `mher/flower` image, exposed on port `5555`.
 
 ```yaml
 services:
@@ -120,23 +125,40 @@ services:
     image: redis:latest
     ports:
       - "6379:6379"
+  celery:
+    build: .
+    command: celery -A spendsense worker --loglevel=info
+    depends_on:
+      - redis
+      - db
+    environment:
+      - DATABASE_URL=mongodb://db:27017/finance_tracker
+  flower:
+    image: mher/flower
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
 volumes:
   mongo_data:
 ```
 
 ## 🔧 Troubleshooting
 
-- **Port conflicts**: Ensure ports `8000`, `27017`, and `6379` are free. Check with `sudo netstat -tuln | grep <port>`.
+- **Port conflicts**: Ensure ports `8000`, `27017`, `6379`, and `5555` are free. Check with `sudo netstat -tuln | grep <port>`.
 - **MongoDB connection issues**: Verify the `DATABASE_URL` in the `.env` file matches the MongoDB service name (`db`) and database name (`finance_tracker`).
+- **Celery issues**: Ensure the `CELERY_BROKER_URL` in the `.env` file is set to `redis://redis:6379/0`.
 - **Docker permissions**: On Linux, if you encounter permission errors, add your user to the Docker group: `sudo usermod -aG docker $USER`.
 
 ## 🌐 Accessing from Local Network
 
-To access **SpendSense** from another device on your local network:
+To access **SpendSense** or the Flower dashboard from another device on your local network:
 
 1. Add your machine’s local IP (e.g., `192.168.1.6`) to `ALLOWED_HOSTS` in the `.env` file.
-2. Ensure your firewall allows traffic on port `8000`.
-3. Access the app via `http://<your-ip>:8000` from another device.
+2. Ensure your firewall allows traffic on ports `8000` (Django) and `5555` (Flower).
+3. Access the app via `http://<your-ip>:8000` or Flower via `http://<your-ip>:5555` from another device.
 
 ## 📜 License
 
