@@ -29,7 +29,7 @@
             <li><a>Expenses</a></li>
             <li><a>Reports</a></li>
             {% if user.is_authenticated %}
-                <li><a href="{% url 'logout' %}">Profile</a></li>
+                <li><a href="{% url 'profile' %}">Profile</a></li>
             {% else %}
                 <li><a href="{% url 'auth' %}">Login</a></li>
             {% endif %}

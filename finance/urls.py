@@ -9,6 +9,7 @@ urlpatterns = [
     path('register/', views.RegisterUser.as_view(), name='register'),
     path('login/', views.LoginUser.as_view(), name='auth'),
     path('logout/', views.LogoutUser.as_view(), name='logout'),
+    path('profile/', views.UserProfile.as_view(), name='profile'),
     # API endpoints
     path('api/check_username/', views.check_username, name='check_username'),
 ]

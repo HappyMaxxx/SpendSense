@@ -253,10 +253,22 @@ tr:hover {
     margin-top: 1rem;
 }
 
+.right_button {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+}
+
 .center_div {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.right_div {
+    display: flex;
+    justify-content: flex-end;
+    align-items: right;
 }
 
 /* Стилі для всіх інпутів */

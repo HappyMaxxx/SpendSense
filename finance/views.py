@@ -76,7 +76,7 @@ class RegisterUser(CreateView):
         user.save()
 
         login(self.request, user)
-        return redirect('home')
+        return redirect('profile')
 
 
 class LoginUser(LoginView):
@@ -84,20 +84,36 @@ class LoginUser(LoginView):
     template_name = 'finance/login.html'
 
     def get_success_url(self):
-        return reverse_lazy('home')
+        return reverse_lazy('profile')
 
 
 class LogoutUser(View):
     def get(self, request):
         logout(request)
         return redirect('auth')
-    
 
+
+class UserProfile(LoginRequiredMixin, View):
+    def get(self, request):
+        user = request.user
+
+        if not user:
+            return render(request, 'finance/404.html', status=404)
+
+        transactions = Transaction.objects.filter(user=user)
+        context = {
+            'user': user,
+            'transactions': transactions,
+        }
+        return render(request, 'finance/profile.html', context)
+    
+    
+# API
 class PageNotFoundView(View):
     def get(self, request, exception):
         return render(request, 'finance/404.html', status=404)
-    
-# API
+
+
 def check_username(request):
     if request.method == 'POST':
         data = json.loads(request.body)

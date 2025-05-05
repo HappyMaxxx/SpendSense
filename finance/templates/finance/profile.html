@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="center_div">
+    <div style="width: 100%; max-width: 500px;">
+        <h2>{{ user.username }}</h2>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Date Joined:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+        {% if user.first_name or user.last_name %}
+            <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="right_div" style="margin-top: 1rem;">
+    <a href="{% url 'logout' %}">
+        <button>LogOut</button>
+    </a>
+</div>
+{% endblock %}
