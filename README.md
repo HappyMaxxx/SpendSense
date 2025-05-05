@@ -29,9 +29,14 @@ Follow these steps to set up and run **SpendSense** on your local machine.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/HappyMaxxx/SpendSense.git spendsense
+git clone --depth=1  https://github.com/HappyMaxxx/SpendSense.git spendsense
 cd spendsense
 ```
+> **Note**: The `--depth=1` flag performs a shallow clone, downloading only the latest commit to save time and space. If you need the full commit history later, run: 
+> ```bash
+> git fetch --unshallow
+> ```
+
 
 ### 2. Configure Environment Variables
 
