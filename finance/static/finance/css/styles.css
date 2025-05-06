@@ -61,16 +61,30 @@ header h1 {
     margin-bottom: 0.5rem;
 }
 
-.theme-toggle {
+.set_button {
     position: absolute;
-    right: 1rem;
-    top: 1rem;
     background: none;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
     color: white;
     font-size: 1.2rem;
+}
+
+.theme-toggle {
+    right: 1rem;
+    top: 1rem;
+}
+
+.expenses-settings {
+    right: 1rem; 
+    top: 1rem;  
+}
+
+.burger-menu {
+    left: 1rem;
+    top: 1rem;
+    display: none;
 }
 
 .theme-toggle i {
@@ -125,6 +139,7 @@ nav ul li a:hover {
     max-width: 700px;
     display: flex;
     flex-direction: column;
+    position: relative;
 }
 
 footer {
@@ -135,10 +150,28 @@ footer {
     width: 100%;
 }
 
+.nav-menu {
+    background-color: var(--nav-bg);
+    padding: 0.5rem;
+    display: block;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     header h1 {
         font-size: 1.5rem;
+    }
+
+    .burger-menu {
+        display: block; 
+    }
+
+    .nav-menu {
+        display: none; 
+    }
+
+    .nav-menu.active {
+        display: block;
     }
 
     nav ul {
@@ -183,6 +216,12 @@ footer {
 
     .theme-toggle {
         right: 0.5rem;
+        top: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .burger-menu {
+        left: 0.5rem;
         top: 0.5rem;
         font-size: 1.2rem;
     }
@@ -240,35 +279,18 @@ tr:hover {
     background-color: var(--table-hover-bg);
 }
 
-@media (max-width: 600px) {
-    table {
-        display: block;
-        overflow-x: auto;
-    }
-}
-
-.center_button {
-    display: flex;
-    justify-content: center;
-    margin-top: 1rem;
-}
-
-.right_button {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 1rem;
-}
-
 .center_div {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin-top: 1rem;
 }
 
 .right_div {
     display: flex;
     justify-content: flex-end;
     align-items: right;
+    margin-top: 1rem;
 }
 
 /* Стилі для всіх інпутів */
@@ -310,4 +332,19 @@ input[name="email"] {
 
 #submitLink {
     margin-top: 0 !important;
+}
+
+.expenses-list h3 {
+    font-size: 1.5em;
+    margin-top: 20px;
+}
+
+.expenses-list ul {
+    list-style: none;
+    padding-left: 20px;
+}
+
+.expenses-list li {
+    margin-bottom: 10px;
+    font-size: 1em;
 }

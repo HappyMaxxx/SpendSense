@@ -10,4 +10,10 @@ class Transaction(models.Model):
     time_update = models.DateTimeField(auto_now=True)
     
     def __str__(self):
-        return f"{self.amount} - {self.category}"
+        return f"Trans: {self.amount} - {self.category}"
+    
+
+class Earnings(Transaction):
+
+    def __str__(self):
+        return f"Earn: {self.amount} - {self.category}"

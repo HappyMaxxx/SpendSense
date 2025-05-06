@@ -15,18 +15,20 @@
 <body>
     <header>
         <h1>SpendSens</h1>
-
-        <button class="theme-toggle" aria-label="Toggle theme">
+        <button class="burger-menu set_button" aria-label="Toggle navigation">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <button class="theme-toggle set_button" aria-label="Toggle theme">
             <i class="fas fa-sun sun-icon"></i>
             <i class="fas fa-moon moon-icon"></i>
         </button>
     </header>
 
-    <nav>
+    <nav class="nav-menu">
         <ul>
             <li><a href="{% url 'home' %}">Home</a></li>
             <li><a href="{% url 'new_transaction' %}">Add Expense</a></li>
-            <li><a>Expenses</a></li>
+            <li><a href="{% url 'expenses' %}">Expenses</a></li>
             <li><a>Reports</a></li>
             {% if user.is_authenticated %}
                 <li><a href="{% url 'profile' %}">Profile</a></li>
@@ -43,9 +45,10 @@
         </div>
     </div>
     <footer>
-        <p>&copy; {% now "Y" %} SpendSens Finance trecker. All rights reserved.</p>
+        <p>&copy; {% now "Y" %} SpendSens Finance tracker. All rights reserved.</p>
     </footer>
     
     <script src="{% static 'finance/js/theme-toggle.js' %}"></script>
+    <script src="{% static 'finance/js/burger-menu.js' %}"></script>
 </body>
 </html>

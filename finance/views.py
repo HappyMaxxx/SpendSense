@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import Transaction
+from .models import Transaction, Earnings
 from .forms import RegisterUserForm, LoginUserForm
 from django.urls import reverse_lazy
 from django.http import JsonResponse
@@ -58,7 +58,7 @@ class MakeNewTransaction(LoginRequiredMixin, View):
             description=f'{trans_products[0]} and {trans_products[1]}',
         )
 
-        return redirect('home')
+        return redirect('expenses')
 
 
 class RegisterUser(CreateView):
@@ -106,6 +106,23 @@ class UserProfile(LoginRequiredMixin, View):
             'transactions': transactions,
         }
         return render(request, 'finance/profile.html', context)
+
+
+class UserExpenses(LoginRequiredMixin, View):
+    def get(self, request):
+        user = request.user
+        transactions = Transaction.objects.filter(user=user).order_by('-time_update')
+        earnings = Earnings.objects.filter(user=user).order_by('-time_update')
+        total_expenses = sum(transaction.amount.to_decimal() for transaction in transactions)
+        total_earnings = sum(earning.amount.to_decimal() for earning in earnings)
+
+        context = {
+            'user': user,
+            'transactions': transactions,
+            'total_expenses': total_expenses,
+            'total_earnings': total_earnings,
+        }
+        return render(request, 'finance/expenses.html', context)
     
     
 # API
