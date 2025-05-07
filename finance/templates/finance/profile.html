@@ -9,6 +9,17 @@
         {% if user.first_name or user.last_name %}
             <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
         {% endif %}
+
+        <p style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+            <p></p>
+            <strong>For this</strong>
+            <select name="period" id="period" style="border: 1px solid #ccc; padding: 2px; font-size: 16px;">
+                <option value="week" {% if selected_period == 'week' %}selected{% endif %}>Week</option>
+                <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Month</option>
+                <option value="year" {% if selected_period == 'year' %}selected{% endif %}>Year</option>
+            </select>
+            <strong>you spent:</strong> <span id="total-spending">${{ total_spending|floatformat:2 }}</span>
+        </p>
     </div>
 </div>
 
@@ -17,4 +28,24 @@
         <button>LogOut</button>
     </a>
 </div>
+
+<script>
+document.getElementById('period').addEventListener('change', function() {
+    const period = this.value;
+
+    fetch('{% url "profile" %}?period=' + period, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest', 
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.total_spending !== undefined) {
+            document.getElementById('total-spending').textContent = '$' + parseFloat(data.total_spending).toFixed(2);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>
 {% endblock %}

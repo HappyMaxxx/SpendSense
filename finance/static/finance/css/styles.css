@@ -78,7 +78,8 @@ header h1 {
 
 .expenses-settings {
     right: 1rem; 
-    top: 1rem;  
+    top: 1rem; 
+    color: var(--text-color);
 }
 
 .burger-menu {
@@ -347,4 +348,14 @@ input[name="email"] {
 .expenses-list li {
     margin-bottom: 10px;
     font-size: 1em;
+}
+
+.loss {
+    font-size: 0.8em;
+    color: red;
+}
+
+.profit {
+    font-size: 0.8em;
+    color: green;
 }

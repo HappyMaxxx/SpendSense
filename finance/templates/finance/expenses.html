@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load expense_filters %}
 
 {% block content %}
 <h1>Expenses</h1>
@@ -9,16 +10,26 @@
 </button>
 
 <div class="center_div" style="margin-top: 0 !important;">
-<p>Total {{ total_expenses }}</p>
+<p>Total {{ profit }}$</p>
 </div>
 
 <div class="expenses-list">
     {% regroup transactions by time_update.date as transactions_by_date %}
     {% for date_group in transactions_by_date %}
-        <h3>{{ date_group.grouper|date:"d.m.Y" }}</h3>
+        {% sum_amount date_group.list as summa %}
+            
+        <h3>
+            {{ date_group.grouper|date:"d.m.Y" }}
+            {% if summa > 0 %} 
+                <span class="profit">+{{ summa }}$</span>
+            {% else %}
+                <span class="loss">{{ summa }}$</span>
+            {% endif %}
+        </h3>
         <ul>
             {% for expense in date_group.list %}
-                <li>{{ expense.time_update|date:"H:i" }} - {{ expense.description }}: ${{ expense.amount }}</li>
+                <li>{{ expense.time_update|date:"H:i" }} - {{ expense.description }}:
+                    {% if expense|is_transaction %}-{% endif %}{{ expense.amount }}$</li>
             {% endfor %}
         </ul>
     {% endfor %}

@@ -4,6 +4,9 @@ from .forms import RegisterUserForm, LoginUserForm
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.db import transaction
+from dateutil.relativedelta import relativedelta
+from datetime import datetime
+from django.db.models import Sum
 
 from django.contrib.auth.mixins import AccessMixin
 from django.views import View
@@ -100,13 +103,39 @@ class UserProfile(LoginRequiredMixin, View):
         if not user:
             return render(request, 'finance/404.html', status=404)
 
-        transactions = Transaction.objects.filter(user=user)
+        period = request.GET.get('period', 'month')
+
+        end_date = datetime.now()
+        if period == 'week':
+            start_date = end_date - relativedelta(weeks=1)
+        elif period == 'month':
+            start_date = end_date - relativedelta(months=1)
+        elif period == 'year':
+            start_date = end_date - relativedelta(years=1)
+        else:
+            start_date = end_date - relativedelta(months=1)
+
+        transactions = Transaction.objects.filter(
+            user=user,
+            time_create__range=[start_date, end_date]
+        )
+
+        total_spending = sum(transaction.amount.to_decimal() for transaction in transactions) \
+            if transactions else 0
+
+        # Check if the request is AJAX
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'total_spending': float(total_spending),  # Convert to float for JSON serialization
+            })
+
         context = {
             'user': user,
             'transactions': transactions,
+            'total_spending': total_spending,
+            'selected_period': period,
         }
         return render(request, 'finance/profile.html', context)
-
 
 class UserExpenses(LoginRequiredMixin, View):
     def get(self, request):
@@ -115,12 +144,15 @@ class UserExpenses(LoginRequiredMixin, View):
         earnings = Earnings.objects.filter(user=user).order_by('-time_update')
         total_expenses = sum(transaction.amount.to_decimal() for transaction in transactions)
         total_earnings = sum(earning.amount.to_decimal() for earning in earnings)
+        
+        profit = total_earnings - total_expenses
 
         context = {
             'user': user,
             'transactions': transactions,
             'total_expenses': total_expenses,
             'total_earnings': total_earnings,
+            'profit': profit,
         }
         return render(request, 'finance/expenses.html', context)
     
