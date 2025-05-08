@@ -48,7 +48,7 @@ DEBUG=False
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-> **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g.,_using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
+> **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g.,_using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
 
 ### 3. Collect Static Files
 
@@ -161,7 +161,7 @@ volumes:
 
 To access **SpendSense** or the Flower dashboard from another device on your local network:
 
-1. Add your machine’s local IP (e.g., `192.168.1.6`) to `ALLOWED_HOSTS` in the `.env` file.
+1. Add your machine’s local IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` in the `.env` file.
 2. Ensure your firewall allows traffic on ports `8000` (Django) and `5555` (Flower).
 3. Access the app via `http://<your-ip>:8000` or Flower via `http://<your-ip>:5555` from another device.
 

@@ -1,17 +1,57 @@
 {% extends 'base.html' %}
+{% load form_tags %}
 {% load static %}
 
 {% block content %}
+<h1 class="text-2xl font-bold mb-4">Add Transaction</h1>
 
-<h1>Add new transaction</h1>
+<form method="post" class="space-y-4">
+    {% csrf_token %}
 
-<div class="sa_buttons">
-    <a href="{% url 'spent' %}">
-        <button>New Spent</button>
-    </a>
-    <a href="{% url 'earn' %}">
-        <button>New Earning</button>
-    </a>
-</div>
+    <div>
+        <strong><label class="block font-semibold mb-1" for="{{ form.transaction_type.id_for_label }}">
+            {{ form.transaction_type.label }}:
+        </label></strong>
+        {{ form.transaction_type|add_class:"border rounded p-2 w-full" }}
+        {% if form.transaction_type.errors %}
+            <p class="text-red-500 text-sm">{{ form.transaction_type.errors.0 }}</p>
+        {% endif %}
+    </div>
+    
+    <div>
+        <strong><label class="block font-semibold mb-1" for="{{ form.amount.id_for_label }}">
+            {{ form.amount.label }}:
+        </label></strong>
+        {{ form.amount|add_class:"border rounded p-2 w-full" }}
+        {% if form.amount.errors %}
+            <p class="text-red-500 text-sm">{{ form.amount.errors.0 }}</p>
+        {% endif %}
+    </div>
 
+    <div>
+        <strong><label class="block font-semibold mb-1" for="{{ form.description.id_for_label }}">
+            {{ form.description.label }}:
+        </label></strong>
+        {{ form.description|add_class:"border rounded p-2 w-full" }}
+        {% if form.description.errors %}
+            <p class="text-red-500 text-sm">{{ form.description.errors.0 }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        <strong><label class="block font-semibold mb-1" for="{{ form.category.id_for_label }}">
+            {{ form.category.label }}:
+        </label></strong>
+        {{ form.category|add_class:"border rounded p-2 w-full" }}
+        {% if form.category.errors %}
+            <p class="text-red-500 text-sm">{{ form.category.errors.0 }}</p>
+        {% endif %}
+    </div>
+
+    <div class="center_div">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Save
+        </button>
+    </div>
+</form>
 {% endblock %}

@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from .models import Spents, Earnings
-from .forms import RegisterUserForm, LoginUserForm
+from .forms import RegisterUserForm, LoginUserForm, TransactionForm
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.db import transaction
@@ -19,32 +19,6 @@ import json
 import random
 from .tasks import test_task
 
-products = {
-    'milk': 1.5,
-    'bread': 2.0,
-    'eggs': 3.0,
-    'cheese': 4.0,
-    'chocolate': 2.5,
-    'coffee': 5.0,
-    'tea': 3.5,
-    'juice': 2.0,
-    'water': 1.0,
-    'snacks': 2.5,
-    'fruits': 3.0,
-    'vegetables': 2.0,
-    'cereal': 4.0,
-    'pasta': 2.5
-}
-
-earnings = {
-    'salary': 1000,
-    'bonus': 200,
-    'interest': 50,
-    'investment': 300,
-    'gift': 100,
-    'freelance': 400
-}
-
 
 class LoginRequiredMixin(AccessMixin):
     login_url = reverse_lazy('auth')
@@ -58,36 +32,18 @@ class LoginRequiredMixin(AccessMixin):
 def index(request):
     return render(request, 'finance/index.html')
 
-class NewTransaction(LoginRequiredMixin, View):
+
+class AddTransactionView(LoginRequiredMixin, View):
     def get(self, request):
-        return render(request, 'finance/new_transaction.html')
-
-class MakeNewSpent(LoginRequiredMixin, View):
-    def get(self, request):
-        trans_products = random.sample(list(products.keys()), 2)
-
-        transaction = Spents.objects.create(
-            user=request.user,
-            amount=products[trans_products[0]] + products[trans_products[1]],
-            category='shopping',
-            description=f'{trans_products[0]} and {trans_products[1]}',
-        )
-
-        return redirect('expenses')
-
-
-class MakeNewEarning(LoginRequiredMixin, View):
-    def get(self, request):
-        earning = random.choice(list(earnings.keys()))
-
-        earning = Earnings.objects.create(
-            user=request.user,
-            amount=earnings[earning],
-            category='salary',
-            description=f'{earning}',
-        )
-
-        return redirect('expenses')
+        form = TransactionForm()
+        return render(request, 'finance/new_transaction.html', {'form': form})
+    
+    def post(self, request):
+            form = TransactionForm(request.POST)
+            if form.is_valid():
+                form.save(user=request.user)
+                return redirect('expenses')
+            
 
 class RegisterUser(CreateView):
     form_class = RegisterUserForm
