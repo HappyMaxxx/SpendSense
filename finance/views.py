@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import Transaction, Earnings
+from .models import Spents, Earnings
 from .forms import RegisterUserForm, LoginUserForm
 from django.urls import reverse_lazy
 from django.http import JsonResponse
@@ -36,6 +36,15 @@ products = {
     'pasta': 2.5
 }
 
+earnings = {
+    'salary': 1000,
+    'bonus': 200,
+    'interest': 50,
+    'investment': 300,
+    'gift': 100,
+    'freelance': 400
+}
+
 
 class LoginRequiredMixin(AccessMixin):
     login_url = reverse_lazy('auth')
@@ -49,12 +58,15 @@ class LoginRequiredMixin(AccessMixin):
 def index(request):
     return render(request, 'finance/index.html')
 
+class NewTransaction(LoginRequiredMixin, View):
+    def get(self, request):
+        return render(request, 'finance/new_transaction.html')
 
-class MakeNewTransaction(LoginRequiredMixin, View):
+class MakeNewSpent(LoginRequiredMixin, View):
     def get(self, request):
         trans_products = random.sample(list(products.keys()), 2)
 
-        transaction = Transaction.objects.create(
+        transaction = Spents.objects.create(
             user=request.user,
             amount=products[trans_products[0]] + products[trans_products[1]],
             category='shopping',
@@ -63,6 +75,19 @@ class MakeNewTransaction(LoginRequiredMixin, View):
 
         return redirect('expenses')
 
+
+class MakeNewEarning(LoginRequiredMixin, View):
+    def get(self, request):
+        earning = random.choice(list(earnings.keys()))
+
+        earning = Earnings.objects.create(
+            user=request.user,
+            amount=earnings[earning],
+            category='salary',
+            description=f'{earning}',
+        )
+
+        return redirect('expenses')
 
 class RegisterUser(CreateView):
     form_class = RegisterUserForm
@@ -115,24 +140,31 @@ class UserProfile(LoginRequiredMixin, View):
         else:
             start_date = end_date - relativedelta(months=1)
 
-        transactions = Transaction.objects.filter(
+        spents = Spents.objects.filter(
+            user=user,
+            time_create__range=[start_date, end_date]
+        )
+        earnings = Earnings.objects.filter(
             user=user,
             time_create__range=[start_date, end_date]
         )
 
-        total_spending = sum(transaction.amount.to_decimal() for transaction in transactions) \
-            if transactions else 0
+        total_spending = sum(transaction.amount.to_decimal() for transaction in spents) \
+            if spents else 0
+        total_earning = sum(transaction.amount.to_decimal() for transaction in earnings) \
+            if earnings else 0
 
         # Check if the request is AJAX
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'total_spending': float(total_spending),  # Convert to float for JSON serialization
+                'total_earning': float(total_earning),
             })
 
         context = {
             'user': user,
-            'transactions': transactions,
             'total_spending': total_spending,
+            'total_earning': total_earning,
             'selected_period': period,
         }
         return render(request, 'finance/profile.html', context)
@@ -140,9 +172,10 @@ class UserProfile(LoginRequiredMixin, View):
 class UserExpenses(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
-        transactions = Transaction.objects.filter(user=user).order_by('-time_update')
+        spents = Spents.objects.filter(user=user).order_by('-time_update')
         earnings = Earnings.objects.filter(user=user).order_by('-time_update')
-        total_expenses = sum(transaction.amount.to_decimal() for transaction in transactions)
+        transactions = list(spents) + list(earnings)
+        total_expenses = sum(spent.amount.to_decimal() for spent in spents)
         total_earnings = sum(earning.amount.to_decimal() for earning in earnings)
         
         profit = total_earnings - total_expenses

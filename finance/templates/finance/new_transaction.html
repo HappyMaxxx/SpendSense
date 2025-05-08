@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<h1>Add new transaction</h1>
+
+<div class="sa_buttons">
+    <a href="{% url 'spent' %}">
+        <button>New Spent</button>
+    </a>
+    <a href="{% url 'earn' %}">
+        <button>New Earning</button>
+    </a>
+</div>
+
+{% endblock %}

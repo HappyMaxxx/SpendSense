@@ -29,7 +29,7 @@
         <ul>
             {% for expense in date_group.list %}
                 <li>{{ expense.time_update|date:"H:i" }} - {{ expense.description }}:
-                    {% if expense|is_transaction %}-{% endif %}{{ expense.amount }}$</li>
+                    {% if expense|is_spent %}-{% else %}+{% endif %}{{ expense.amount }}$</li>
             {% endfor %}
         </ul>
     {% endfor %}

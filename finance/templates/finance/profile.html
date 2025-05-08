@@ -18,7 +18,8 @@
                 <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Month</option>
                 <option value="year" {% if selected_period == 'year' %}selected{% endif %}>Year</option>
             </select>
-            <strong>you spent:</strong> <span id="total-spending">${{ total_spending|floatformat:2 }}</span>
+            <strong>you spent:</strong> <span id="total-spending">{{ total_spending|floatformat:2 }}$</span>
+            <strong>and earn:</strong> <span id="total-earning">{{ total_earning|floatformat:2 }}$</span>
         </p>
     </div>
 </div>
@@ -43,6 +44,9 @@ document.getElementById('period').addEventListener('change', function() {
     .then(data => {
         if (data.total_spending !== undefined) {
             document.getElementById('total-spending').textContent = '$' + parseFloat(data.total_spending).toFixed(2);
+        }
+        if (data.total_earning !== undefined) {
+            document.getElementById('total-earning').textContent = '$' + parseFloat(data.total_earning).toFixed(2);
         }
     })
     .catch(error => console.error('Error:', error));

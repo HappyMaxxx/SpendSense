@@ -3,7 +3,7 @@ from django.contrib import admin
 from .models import *
 
 
-class TransactionAdmin(admin.ModelAdmin):
+class SpentsAdmin(admin.ModelAdmin):
     list_display = ('user', 'amount', 'category', 'description', 'time_create', 'time_update')
     ordering = ('-time_create',)
     list_display_links = ('amount', 'category')
@@ -17,5 +17,5 @@ class EarningsAdmin(admin.ModelAdmin):
     list_filter = ('category',)
     search_fields = ('description',)
 
-admin.site.register(Transaction, TransactionAdmin)
+admin.site.register(Spents, SpentsAdmin)
 admin.site.register(Earnings, EarningsAdmin)

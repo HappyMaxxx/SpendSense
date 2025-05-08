@@ -359,3 +359,9 @@ input[name="email"] {
     font-size: 0.8em;
     color: green;
 }
+
+.sa_buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+}
