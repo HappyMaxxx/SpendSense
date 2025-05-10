@@ -15,6 +15,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, logout
 
+from operator import attrgetter
 import json
 import random
 from .tasks import test_task
@@ -130,7 +131,7 @@ class UserExpenses(LoginRequiredMixin, View):
         user = request.user
         spents = Spents.objects.filter(user=user).order_by('-time_update')
         earnings = Earnings.objects.filter(user=user).order_by('-time_update')
-        transactions = list(spents) + list(earnings)
+        transactions = sorted(list(spents) + list(earnings), key=attrgetter('time_update'), reverse=True)
         total_expenses = sum(spent.amount.to_decimal() for spent in spents)
         total_earnings = sum(earning.amount.to_decimal() for earning in earnings)
         
@@ -161,3 +162,47 @@ def check_username(request):
             return JsonResponse({'error': 'This username is already taken.'}, status=200)
 
         return JsonResponse({'error': ''}, status=200)
+    
+def edit_transaction(request, transaction_id, transaction_type):
+    user = request.user
+    transaction = None
+
+    print(transaction_id, transaction_type)
+    if transaction_type == 0:
+        transaction = Spents.objects.filter(id=transaction_id, user=user).first()
+    elif transaction_type == 1:
+        transaction = Earnings.objects.filter(id=transaction_id, user=user).first()
+
+    if not transaction:
+        return render(request, 'finance/404.html', status=404)
+
+    if request.method == 'POST':
+        form = TransactionForm(request.POST, instance=transaction)
+        if form.is_valid():
+            form.save(user=user)
+            return redirect('expenses')
+    else:
+        form = TransactionForm(instance=transaction, initial={'transaction_type': 'expense' if transaction_type == 0 else 'income'})
+
+    context = {
+        'form': form,
+        'transaction': transaction,
+        'transaction_id': transaction_id,
+        'transaction_type': transaction_type,
+    }
+    return render(request, 'finance/edit_transaction.html', context)
+
+def delete_transaction(request, transaction_id, transaction_type):
+    user = request.user
+    transaction = None
+
+    if transaction_type == 0:
+        transaction = Spents.objects.filter(id=transaction_id, user=user).first()
+    elif transaction_type == 1:
+        transaction = Earnings.objects.filter(id=transaction_id, user=user).first()
+    
+    if not transaction:
+        return render(request, 'finance/404.html', status=404)
+    
+    transaction.delete()
+    return redirect('expenses')

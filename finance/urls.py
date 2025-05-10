@@ -13,4 +13,6 @@ urlpatterns = [
     path('expenses/', views.UserExpenses.as_view(), name='expenses'),
     # API endpoints
     path('api/check_username/', views.check_username, name='check_username'),
+    path('api/edit-transaction/<int:transaction_id>/<int:transaction_type>/', views.edit_transaction, name='edit_transaction'),
+    path('api/delete-transaction/<int:transaction_id>/<int:transaction_type>/', views.delete_transaction, name='delete_transaction'),
 ]

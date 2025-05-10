@@ -74,13 +74,17 @@ class TransactionForm(forms.ModelForm):
 
     def save(self, commit=True, user=None):
         transaction_type = self.cleaned_data.get('transaction_type')
-        model = Spents if transaction_type == 'expense' else Earnings
-        instance = model(
-            amount=self.cleaned_data['amount'],
-            description=self.cleaned_data['description'],
-            category=self.cleaned_data['category'],
-            user=user
-        )
+        instance = self.instance
+
+        if not instance.id:
+            model = Spents if transaction_type == 'expense' else Earnings
+            instance = model(user=user)
+
+        instance.amount = self.cleaned_data['amount']
+        instance.description = self.cleaned_data['description']
+        instance.category = self.cleaned_data['category']
+        instance.user = user
+
         if commit:
             instance.save()
         return instance

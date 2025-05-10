@@ -18,9 +18,11 @@
     {% for date_group in transactions_by_date %}
         {% sum_amount date_group.list as summa %}
             
-        <h3>
+        <h3 class="expense-h3">
             {{ date_group.grouper|date:"d.m.Y" }}
-            {% if summa > 0 %} 
+            {% if summa == 0 %}
+                <span class="zero">{{ summa }}$</span>
+            {% elif summa > 0 %} 
                 <span class="profit">+{{ summa }}$</span>
             {% else %}
                 <span class="loss">{{ summa }}$</span>
@@ -28,8 +30,27 @@
         </h3>
         <ul>
             {% for expense in date_group.list %}
-                <li>{{ expense.time_update|date:"H:i" }} - {{ expense.description }}:
-                    {% if expense|is_spent %}-{% else %}+{% endif %}{{ expense.amount }}$</li>
+                <li class="expens_elem">
+                    {{ expense.time_update|date:"H:i" }} - {{ expense.description }}:
+                    {% if expense|is_spent %}-{% else %}+{% endif %}{{ expense.amount }}$
+                    <div class="expense-actions">
+                        {% if not expense|is_spent %}
+                            <button onclick="editEarning('{{ expense.id }}')" title="Edit">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button onclick="deleteEarning('{{ expense.id }}')" title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        {% else %}
+                            <button onclick="editExpense('{{ expense.id }}')" title="Edit">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button onclick="deleteExpense('{{ expense.id }}')" title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        {% endif %}
+                    </div>
+                </li>
             {% endfor %}
         </ul>
     {% endfor %}
@@ -41,9 +62,10 @@
     </a>
 </div>
 
+<script src="{% static 'finance/js/expenses.js' %}"></script>
 <script>
     function redirectToSettings() {
-        window.location.href = "{% url 'home' %}"; // TODO: settings
+        window.location.href = "{% url 'home' %}";
     }
 </script>
 {% endblock %}

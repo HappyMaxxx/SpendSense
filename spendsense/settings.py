@@ -64,6 +64,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'djongo',
         'NAME': 'finance_tracker',
+        'ENFORCE_SCHEMA': True,
         'CLIENT': {
             'host': os.getenv('DATABASE_URL', 'mongodb://localhost:27017/finance_tracker'),
         }

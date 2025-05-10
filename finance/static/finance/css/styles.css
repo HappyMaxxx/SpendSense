@@ -92,6 +92,10 @@ header h1 {
     color: var(--text-color);
 }
 
+.expenses-settings:hover {
+    color: white;
+}
+
 .burger-menu {
     left: 1rem;
     top: 1rem;
@@ -356,7 +360,6 @@ input[name="email"] {
 }
 
 .expenses-list li {
-    margin-bottom: 10px;
     font-size: 1em;
 }
 
@@ -368,6 +371,11 @@ input[name="email"] {
 .profit {
     font-size: 0.8em;
     color: green;
+}
+
+.zero {
+    font-size: 0.8em;
+    color: var(--text-color);
 }
 
 .sa_buttons {
@@ -428,4 +436,45 @@ button[type="submit"] {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
+}
+
+.expens_elem {
+    position: relative;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+}
+
+.expens_elem:hover {
+    box-shadow: inset 0 -1px 0 2px var(--text-color); 
+}
+
+.expense-actions {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.expens_elem:hover .expense-actions {
+    opacity: 1;
+}
+
+.expense-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    margin-left: 5px;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.expense-actions button:hover {
+    color: #007bff;
+}
+
+.expense-h3 {
+    padding-left: 15px;
 }
