@@ -5,7 +5,7 @@ from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.db import transaction
 from dateutil.relativedelta import relativedelta
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db.models import Sum
 
 from django.contrib.auth.mixins import AccessMixin
@@ -14,6 +14,7 @@ from django.views.generic import CreateView
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, logout
+from django.utils import timezone
 
 from operator import attrgetter
 import json
@@ -126,15 +127,51 @@ class UserProfile(LoginRequiredMixin, View):
         }
         return render(request, 'finance/profile.html', context)
 
+
 class UserExpenses(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
-        spents = Spents.objects.filter(user=user).order_by('-time_update')
-        earnings = Earnings.objects.filter(user=user).order_by('-time_update')
-        transactions = sorted(list(spents) + list(earnings), key=attrgetter('time_update'), reverse=True)
+        period = request.GET.get('period', 'all')
+        transaction_type = request.GET.get('transaction_type', 'all')
+        sort_by = request.GET.get('sort_by', 'date_desc')
+
+        # Фільтрація за типом транзакцій
+        spents = Spents.objects.filter(user=user)
+        earnings = Earnings.objects.filter(user=user)
+
+        # Фільтрація за періодом
+        now = timezone.now()
+        if period == 'year':
+            spents = spents.filter(time_update__gte=now - timedelta(days=365))
+            earnings = earnings.filter(time_update__gte=now - timedelta(days=365))
+        elif period == 'month':
+            spents = spents.filter(time_update__gte=now - timedelta(days=30))
+            earnings = earnings.filter(time_update__gte=now - timedelta(days=30))
+        elif period == 'week':
+            spents = spents.filter(time_update__gte=now - timedelta(days=7))
+            earnings = earnings.filter(time_update__gte=now - timedelta(days=7))
+
+        # Об'єднання транзакцій
+        if transaction_type == 'spent':
+            transactions = list(spents)
+        elif transaction_type == 'earning':
+            transactions = list(earnings)
+        else:
+            transactions = list(spents) + list(earnings)
+
+        # Сортування
+        if sort_by == 'date_asc':
+            transactions = sorted(transactions, key=attrgetter('time_update'))
+        elif sort_by == 'amount_desc':
+            transactions = sorted(transactions, key=lambda x: x.amount.to_decimal(), reverse=True)
+        elif sort_by == 'amount_asc':
+            transactions = sorted(transactions, key=lambda x: x.amount.to_decimal())
+        else:  # date_desc
+            transactions = sorted(transactions, key=attrgetter('time_update'), reverse=True)
+
+        # Обчислення загальних сум
         total_expenses = sum(spent.amount.to_decimal() for spent in spents)
         total_earnings = sum(earning.amount.to_decimal() for earning in earnings)
-        
         profit = total_earnings - total_expenses
 
         context = {
@@ -143,6 +180,9 @@ class UserExpenses(LoginRequiredMixin, View):
             'total_expenses': total_expenses,
             'total_earnings': total_earnings,
             'profit': profit,
+            'period': period,
+            'transaction_type': transaction_type,
+            'sort_by': sort_by,
         }
         return render(request, 'finance/expenses.html', context)
     
@@ -167,7 +207,6 @@ def edit_transaction(request, transaction_id, transaction_type):
     user = request.user
     transaction = None
 
-    print(transaction_id, transaction_type)
     if transaction_type == 0:
         transaction = Spents.objects.filter(id=transaction_id, user=user).first()
     elif transaction_type == 1:
