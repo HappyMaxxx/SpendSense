@@ -64,36 +64,36 @@
 
 <div id="settingsModal" class="modal">
     <div class="modal-content">
-        <span class="close" onclick="closeSettingsModal()">&times;</span>
-        <h2>Налаштування</h2>
+        <span class="close" onclick="closeSettingsModal()">×</span>
+        <h2>Settings</h2>
         <form id="settingsForm" method="GET" action="{% url 'expenses' %}">
             <div class="form-group">
-                <label for="period">Період транзакцій:</label>
+                <label for="period">Transaction Period:</label>
                 <select name="period" id="period">
-                    <option value="all" {% if period == 'all' %}selected{% endif %}>Весь час</option>
-                    <option value="year" {% if period == 'year' %}selected{% endif %}>Рік</option>
-                    <option value="month" {% if period == 'month' %}selected{% endif %}>Місяць</option>
-                    <option value="week" {% if period == 'week' %}selected{% endif %}>Тиждень</option>
+                    <option value="all" {% if period == 'all' %}selected{% endif %}>All Time</option>
+                    <option value="year" {% if period == 'year' %}selected{% endif %}>Year</option>
+                    <option value="month" {% if period == 'month' %}selected{% endif %}>Month</option>
+                    <option value="week" {% if period == 'week' %}selected{% endif %}>Week</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="transaction_type">Тип транзакцій:</label>
+                <label for="transaction_type">Transaction Type:</label>
                 <select name="transaction_type" id="transaction_type">
-                    <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>Усі</option>
-                    <option value="spent" {% if transaction_type == 'spent' %}selected{% endif %}>Витрати</option>
-                    <option value="earning" {% if transaction_type == 'earning' %}selected{% endif %}>Надходження</option>
+                    <option value="all" {% if transaction_type == 'all' %}selected{% endif %}>All</option>
+                    <option value="spent" {% if transaction_type == 'spent' %}selected{% endif %}>Expenses</option>
+                    <option value="earning" {% if transaction_type == 'earning' %}selected{% endif %}>Income</option>
                 </select>
             </div>
             <div class="form-group">
-                <label for="sort_by">Сортувати за:</label>
+                <label for="sort_by">Sort By:</label>
                 <select name="sort_by" id="sort_by">
-                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Датою (спочатку новіші)</option>
-                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Датою (спочатку старіші)</option>
-                    <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Сумою (від більшої)</option>
-                    <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Сумою (від меншої)</option>
+                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date (Newest First)</option>
+                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date (Oldest First)</option>
+                    <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Amount (Highest First)</option>
+                    <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Amount (Lowest First)</option>
                 </select>
             </div>
-            <button type="submit">Застосувати</button>
+            <button type="submit">Apply</button>
         </form>
     </div>
 </div>

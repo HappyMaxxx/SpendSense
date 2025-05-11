@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Дані з Monobank</h1>
+
+{% if raw_json %}
+  <pre>
+    {{ raw_json }}
+  </pre>
+{% else %}
+  <p>Не вдалося отримати дані з Monobank.</p>
+{% endif %}
+
+{% endblock %}

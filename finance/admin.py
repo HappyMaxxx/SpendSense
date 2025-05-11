@@ -10,6 +10,7 @@ class SpentsAdmin(admin.ModelAdmin):
     list_filter = ('category',)
     search_fields = ('description',)
 
+
 class EarningsAdmin(admin.ModelAdmin):
     list_display = ('user', 'amount', 'category', 'description', 'time_create', 'time_update')
     ordering = ('-time_create',)
@@ -17,5 +18,13 @@ class EarningsAdmin(admin.ModelAdmin):
     list_filter = ('category',)
     search_fields = ('description',)
 
+
+class MonoTokenAdmin(admin.ModelAdmin):
+    list_display = ("user", "created_at")
+    readonly_fields = ("created_at",)
+    exclude = ("token",)
+
+
 admin.site.register(Spents, SpentsAdmin)
 admin.site.register(Earnings, EarningsAdmin)
+admin.site.register(MonoToken, MonoTokenAdmin)

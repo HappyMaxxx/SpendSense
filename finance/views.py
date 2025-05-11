@@ -1,6 +1,8 @@
-from django.shortcuts import render, redirect
-from .models import Spents, Earnings
+from .models import Spents, Earnings, MonoToken, Account
+from .services.mono_api import MonobankAPI
 from .forms import RegisterUserForm, LoginUserForm, TransactionForm
+
+from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.db import transaction
@@ -8,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta
 from django.db.models import Sum
 
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import AccessMixin
 from django.views import View
 from django.views.generic import CreateView
@@ -185,8 +188,47 @@ class UserExpenses(LoginRequiredMixin, View):
             'sort_by': sort_by,
         }
         return render(request, 'finance/expenses.html', context)
-    
-    
+
+@login_required
+def link_monobank(request):
+    if request.method == "POST":
+        token = request.POST.get("mono_token")
+        try:
+            client_info = MonobankAPI.get_client_info(token)
+            mono_token, created = MonoToken.objects.update_or_create(
+                user=request.user, defaults={"token": token}
+            )
+            for account in client_info["accounts"]:
+                Account.objects.update_or_create(
+                    user=request.user,
+                    mono_account_id=account["id"],
+                    defaults={"name": account.get("type", "Unknown"), "balance": account["balance"] / 100}
+                )
+            return redirect("expenses")
+        except Exception as e:
+            return render(request, "finance/link_mono.html", {"error": str(e)})
+    return render(request, "finance/link_mono.html")
+
+@login_required
+def monobank_info_view(request):
+    try:
+        mono_token = MonoToken.objects.get(user=request.user)
+        token = mono_token.token
+    except MonoToken.DoesNotExist:
+        return render(request, "finance/link_mono.html", {"error": "Token not found."}) 
+
+    try:
+        client_info = MonobankAPI.get_client_info(token)
+        raw_json = json.dumps(client_info, indent=2, ensure_ascii=False) 
+    except Exception as e:
+        client_info = None
+        raw_json = None
+
+    return render(request, "finance/client_info.html", {
+        "client_info": client_info,
+        "raw_json": raw_json
+    })
+
 # API
 class PageNotFoundView(View):
     def get(self, request, exception):
@@ -245,3 +287,12 @@ def delete_transaction(request, transaction_id, transaction_type):
     
     transaction.delete()
     return redirect('expenses')
+
+def delete_mono_token(request):
+    user = request.user
+    try:
+        mono_token = MonoToken.objects.get(user=user)
+        mono_token.delete()
+    except MonoToken.DoesNotExist:
+        pass
+    return redirect('profile')

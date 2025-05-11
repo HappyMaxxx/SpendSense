@@ -21,8 +21,29 @@
             <strong>you spent:</strong> <span id="total-spending">{{ total_spending|floatformat:2 }}$</span>
             <strong>and earn:</strong> <span id="total-earning">{{ total_earning|floatformat:2 }}$</span>
         </p>
+
+        <p> </p>
+        {% if user.monotoken %}
+            <p><strong>Monobank Token:</strong> Linked</p>
+        {% else %}
+            <p><strong>Monobank Token:</strong> Not linked</p>
+        {% endif %}
     </div>
 </div>
+
+{% if user.monotoken %}
+    <div class="center_div">
+        <a href="{% url 'link_monobank' %}">
+            <button>Change Token</button>
+        </a>
+    </div>
+{% else %}
+    <div class="center_div">
+        <a href="{% url 'link_monobank' %}">
+            <button>Link Token</button>
+        </a>
+    </div>
+{% endif %}
 
 <div class="right_div">
     <a href="{% url 'logout' %}">
