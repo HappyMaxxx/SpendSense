@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Всі транзакції з Monobank</h1>
+
+{% if errors %}
+{% for er in errors %}
+<p>{{er}}</p>
+{% endfor %}
+{% endif %}
+
+{% if transactions %}
+  <table>
+    <thead>
+      <tr>
+        <th>Дата</th><th>Сума</th><th>Опис</th><th>Тип</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for tx in transactions %}
+        <tr>
+          <td>{{ tx.time|date:"Y-m-d H:i" }}</td>
+          <td>
+            {% with amount=tx.amount_norm|floatformat:2 %}
+              {% if tx.amount_norm > 0 %}
+                <span style="color: green;">+{{ amount }}</span>
+              {% else %}
+                <span style="color: red;">{{ amount }}</span>
+              {% endif %}
+            {% endwith %}
+          </td>
+          <td>{{ tx.description|default:"(Без опису)" }}</td>
+          <td>
+            {% if tx.amount < 0 %}Витрата{% else %}Доход{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>За останній місяць транзакцій не знайдено або не вдалося отримати дані.</p>
+{% endif %}
+
+{% endblock %}

@@ -229,6 +229,34 @@ def monobank_info_view(request):
         "raw_json": raw_json
     })
 
+@login_required
+def all_transactions_view(request):
+    try:
+        mono_token = MonoToken.objects.get(user=request.user)
+    except MonoToken.DoesNotExist:
+        return render(request, "finance/link_mono.html", {"error": "Token not found."}) 
+
+    token = mono_token.token
+    errors = []
+    try:
+        client_info = MonobankAPI.get_client_info(token)
+        account_id = client_info["accounts"][0]["id"]
+        transactions = MonobankAPI.get_all_transactions(token, account_id)
+
+        transactions.sort(key=lambda tx: tx.get("time", 0), reverse=True)
+    except Exception as e:
+        transactions = []
+        errors.append(e)
+
+    for tx in transactions:
+        tx['amount_norm'] = tx['amount'] / 100
+        tx['time'] = datetime.fromtimestamp(tx['time'])
+
+    return render(request, "finance/all_transactions.html", {
+        "transactions": transactions,
+        'errors': errors,
+    })
+
 # API
 class PageNotFoundView(View):
     def get(self, request, exception):
