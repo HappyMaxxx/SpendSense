@@ -26,8 +26,13 @@
 
     <nav class="nav-menu">
         <ul>
-            <li><a href="{% url 'home' %}">Home</a></li>
-            <li><a href="{% url 'new_transaction' %}">Add Expense</a></li>
+            <li><a href="{% url 'home' %}">
+                {% if not request.user.is_authenticated %}
+                    Home
+                {% else %}
+                    Money
+                {% endif %}
+            </a></li>
             <li><a href="{% url 'expenses' %}">Expenses</a></li>
             <li><a>Reports</a></li>
             {% if user.is_authenticated %}

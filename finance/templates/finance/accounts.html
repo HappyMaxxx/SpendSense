@@ -1,0 +1,88 @@
+{% load static %}
+
+<h2 class="center_div" style="margin-top: 0px !important; margin-bottom: 1rem !important;">
+    Total Balance: {{ total_balance }} ₴
+</h2>
+
+<div class="accounts-grid">
+    {% for account in accounts %}
+        <div class="account-box" onclick="document.getElementById('editAccountModal-{{ account.id }}').style.display='block'">
+            <span class="account-name">{{ account.name }}</span>
+            <span class="account-balance">{{ account.balance }} {{ account.currency }}</span>
+        </div>
+    {% endfor %}
+    <div class="account-box add-account" onclick="document.getElementById('addAccountModal').style.display='block'">
+        <span class="plus-sign">+</span>
+    </div>
+</div>
+
+<!-- Modal for adding new account -->
+<div id="addAccountModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="document.getElementById('addAccountModal').style.display='none'">×</span>
+        <h3>Add New Account</h3>
+        <form method="post" action="{% url 'home' %}">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="add">
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+            <label for="balance">Balance:</label>
+            <input type="number" id="balance" name="balance" step="0.01" required>
+            <label for="currency">Currency:</label>
+            <input type="text" id="currency" name="currency" value="₴" required>
+            <button type="submit">Add Account</button>
+        </form>
+    </div>
+</div>
+
+<!-- Modal for existing accounts -->
+{% for account in accounts %}
+    <div id="editAccountModal-{{ account.id }}" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('editAccountModal-{{ account.id }}').style.display='none'">×</span>
+            <h3 style="margin-bottom: 1rem;">{{ account.name }}</h3>
+            <div class="action-buttons">
+                <form method="post" action="{% url 'home' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="add_balance">
+                    <input type="hidden" name="account_id" value="{{ account.id }}">
+                    <button type="submit">+</button>
+                </form>
+                <form method="post" action="{% url 'home' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="subtract_balance">
+                    <input type="hidden" name="account_id" value="{{ account.id }}">
+                    <button type="submit">-</button>
+                </form>
+
+                <button onclick="document.getElementById('editAccountModal-{{ account.id }}').style.display='none'; document.getElementById('settingsModal-{{ account.id }}').style.display='block';">Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Separate modal for settings -->
+    <div id="settingsModal-{{ account.id }}" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('settingsModal-{{ account.id }}').style.display='none'">×</span>
+            <h3>Edit {{ account.name }}</h3>
+            <form method="post" action="{% url 'home' %}" style="width: 100%;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <label for="edit-name-{{ account.id }}">Name:</label>
+                <input type="text" id="edit-name-{{ account.id }}" name="name" value="{{ account.name }}" required>
+                <label for="edit-balance-{{ account.id }}">Balance:</label>
+                <input type="number" id="edit-balance-{{ account.id }}" name="balance" step="0.01" value="{{ account.balance }}" required>
+                <label for="edit-currency-{{ account.id }}">Currency:</label>
+                <input type="text" id="edit-currency-{{ account.id }}" name="currency" value="{{ account.currency }}" required>
+                <button type="submit">Save</button>
+            </form>
+            <form method="post" action="{% url 'home' %}" style="margin-top:10px;">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <button type="submit" style="background:#ff4444;">Delete Account</button>
+            </form>
+        </div>
+    </div>
+{% endfor %}

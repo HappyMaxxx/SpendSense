@@ -1,8 +1,8 @@
-from .models import Spents, Earnings, MonoToken, Account
+from .models import Spents, Earnings, MonoToken, MonoAccount, Account
 from .services.mono_api import MonobankAPI
 from .forms import RegisterUserForm, LoginUserForm, TransactionForm
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.db import transaction
@@ -34,8 +34,74 @@ class LoginRequiredMixin(AccessMixin):
         return super().dispatch(request, *args, **kwargs)
 
 
-def index(request):
-    return render(request, 'finance/index.html')
+class HomeView(View):
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return render(request, 'finance/index.html')
+        
+        user_accs = Account.objects.filter(user=request.user)
+        total_balance = sum(acc.balance.to_decimal() for acc in user_accs) \
+            if user_accs else 0
+
+        data = {'total_balance': total_balance,
+                'accounts': user_accs}
+
+        return render(request, 'finance/index.html', data)
+
+    def post(self, request):
+        if not request.user:
+            return render(request, 'finance/index.html')
+        
+        action = request.POST.get('action')
+        user_accs = Account.objects.filter(user=request.user)
+
+        if action == 'add':
+            name = request.POST.get('name')
+            balance = request.POST.get('balance')
+            currency = request.POST.get('currency', '₴')
+            if name and balance:
+                Account.objects.create(
+                    user=request.user,
+                    name=name,
+                    balance=balance,
+                    currency=currency
+                )
+
+        elif action == 'add_balance':
+            account_id = request.POST.get('account_id')
+            amount = float(request.POST.get('amount', 0))
+            if account_id and amount:
+                account = user_accs.get(id=account_id)
+                account.balance += amount
+                account.save()
+
+        elif action == 'subtract_balance':
+            account_id = request.POST.get('account_id')
+            amount = float(request.POST.get('amount', 0))
+            if account_id and amount:
+                account = user_accs.get(id=account_id)
+                account.balance -= amount
+                account.save()
+
+        elif action == 'update':
+            account_id = request.POST.get('account_id')
+            name = request.POST.get('name')
+            balance = request.POST.get('balance')
+            currency = request.POST.get('currency')
+            if account_id and name and balance:
+                account = user_accs.get(id=account_id)
+                account.name = name
+                account.balance = balance
+                account.currency = currency
+                account.save()
+
+        elif action == 'delete':
+            account_id = request.POST.get('account_id')
+            if account_id:
+                account = user_accs.get(id=account_id)
+                account.delete()
+
+        return HttpResponseRedirect(request.path_info)
 
 
 class AddTransactionView(LoginRequiredMixin, View):
@@ -199,7 +265,7 @@ def link_monobank(request):
                 user=request.user, defaults={"token": token}
             )
             for account in client_info["accounts"]:
-                Account.objects.update_or_create(
+                MonoAccount.objects.update_or_create(
                     user=request.user,
                     mono_account_id=account["id"],
                     defaults={"name": account.get("type", "Unknown"), "balance": account["balance"] / 100}

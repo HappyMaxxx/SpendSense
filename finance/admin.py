@@ -25,6 +25,12 @@ class MonoTokenAdmin(admin.ModelAdmin):
     exclude = ("token",)
 
 
+class AccountAdmin(admin.ModelAdmin):
+    list_display = ('name', 'user', 'balance', 'currency')
+    list_display_links = ('name', 'user')
+    list_filter = ('user', 'currency')
+
 admin.site.register(Spents, SpentsAdmin)
 admin.site.register(Earnings, EarningsAdmin)
 admin.site.register(MonoToken, MonoTokenAdmin)
+admin.site.register(Account, AccountAdmin)

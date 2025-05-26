@@ -12,7 +12,7 @@ class MonoToken(models.Model):
         return f"Token for {self.user.username}"
 
 
-class Account(models.Model):
+class MonoAccount(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     mono_account_id = models.CharField(max_length=255)
     name = models.CharField(max_length=100, blank=True)
@@ -44,4 +44,13 @@ class Earnings(models.Model):
 
     def __str__(self):
         return f"Earn: {self.amount} - {self.category}"
-    
+
+
+class Account(models.Model):
+    name = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=10, decimal_places=2)
+    currency = models.CharField(max_length=10, default='₴')
+
+    def __str__(self):
+        return f"{self.name} {self.user} ({self.balance} {self.currency})"

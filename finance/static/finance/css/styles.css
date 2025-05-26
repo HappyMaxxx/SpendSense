@@ -21,6 +21,7 @@
     --input-border: #e2e8f0;
     --input-focus-border: #3182ce;
     --input-focus-shadow: rgba(49, 130, 206, 0.2);
+    --close-focus: black;
 }
 
 [data-theme="dark"] {
@@ -40,6 +41,7 @@
     --input-border: #4b5e77;
     --input-focus-border: #4dabf7;
     --input-focus-shadow: rgba(77, 171, 247, 0.2);
+    --close-focus: white;
 }
 
 body {
@@ -429,7 +431,6 @@ textarea:focus {
 }
 
 button[type="submit"] {
-    padding: 0.5rem 1rem;
     border: none;
     border-radius: 0.375rem; 
     font-size: 1rem;
@@ -500,14 +501,14 @@ button[type="submit"] {
     border-radius: 8px;
 }
 .close {
-    color: #aaa;
+    color: var(--text-color);
     float: right;
     font-size: 28px;
     font-weight: bold;
 }
 .close:hover,
 .close:focus {
-    color: black;
+    color: var(--close-focus);
     text-decoration: none;
     cursor: pointer;
 }
@@ -521,4 +522,68 @@ button[type="submit"] {
 .form-group select {
     width: 100%;
     padding: 8px;
+}
+
+.action-buttons button{
+    min-width: 50px;
+}
+
+.accounts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 15px;
+    max-width: 600px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.account-box {
+    background: var(--content-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.account-box:hover {
+    transform: scale(1.05);
+}
+
+.account-name {
+    display: block;
+    font-size: 16px;
+    color: var(--text-color);
+}
+
+.account-balance {
+    display: block;
+    font-size: 14px;
+    color: #1e90ff;
+}
+
+.add-account {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plus-sign {
+    font-size: 24px;
+    color: #1e90ff;
+}
+
+
+@media (max-width: 480px) {
+    .accounts-grid {
+        grid-template-columns: 1fr; 
+        padding: 0 10px; 
+        max-width: 100%; 
+    }
+
+    .account-box {
+        width: 100%; 
+        box-sizing: border-box;
+    }
 }

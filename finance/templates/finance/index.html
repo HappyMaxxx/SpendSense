@@ -2,9 +2,13 @@
 {% load static %}
 
 {% block content %}
-<h1>Home</h1>
-<div class="center_div">
-    <p>Welcome to SpendSens, your personal finance tracker!</p>
-</div>
+{% if not request.user.is_authenticated %}
+    <h1>Home</h1>
+    <div class="center_div">
+        <p>Welcome to SpendSens, your personal finance tracker!</p>
+    </div>
+{% else %}
+    {% include 'finance/accounts.html' %}
+{% endif %}
 
 {% endblock %}
