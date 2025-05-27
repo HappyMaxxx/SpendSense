@@ -10,6 +10,14 @@
             <p><strong>Full Name:</strong> {{ user.first_name }} {{ user.last_name }}</p>
         {% endif %}
 
+        <p style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; text-align: justify;">
+            <p></p>
+            You use <strong>SpendSens</strong> from <strong>{{ user.date_joined|date:"F d, Y" }}</strong>
+            you've spent <strong>{{ total_all_spending }}₴</strong>
+            and earned <strong>{{ total_all_earning }}₴</strong> since then.
+            Overall, your finances have changed by <strong class="{{ class }}">{{ total_all_diff }}₴</strong>
+        </p>
+
         <p style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
             <p></p>
             <strong>For this</strong>
@@ -18,8 +26,8 @@
                 <option value="month" {% if selected_period == 'month' %}selected{% endif %}>Month</option>
                 <option value="year" {% if selected_period == 'year' %}selected{% endif %}>Year</option>
             </select>
-            <strong>you spent:</strong> <span id="total-spending">{{ total_spending|floatformat:2 }}$</span>
-            <strong>and earn:</strong> <span id="total-earning">{{ total_earning|floatformat:2 }}$</span>
+            <strong>you spent:</strong> <span id="total-spending">{{ total_spending|floatformat:2 }}₴</span>
+            <strong>and earn:</strong> <span id="total-earning">{{ total_earning|floatformat:2 }}₴</span>
         </p>
 
         <p> </p>
@@ -64,10 +72,10 @@ document.getElementById('period').addEventListener('change', function() {
     .then(response => response.json())
     .then(data => {
         if (data.total_spending !== undefined) {
-            document.getElementById('total-spending').textContent = parseFloat(data.total_spending).toFixed(2) + '$';
+            document.getElementById('total-spending').textContent = parseFloat(data.total_spending).toFixed(2) + '₴';
         }
         if (data.total_earning !== undefined) {
-            document.getElementById('total-earning').textContent = parseFloat(data.total_earning).toFixed(2) + '$';
+            document.getElementById('total-earning').textContent = parseFloat(data.total_earning).toFixed(2) + '₴';
         }
     })
     .catch(error => console.error('Error:', error));

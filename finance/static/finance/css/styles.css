@@ -615,6 +615,14 @@ button[type="submit"] {
     height: 100%;
 }
 
+.minus {
+    color: red;
+}
+
+.plus {
+    color: green;
+}
+
 @media (max-width: 480px) {
     .accounts-grid {
         grid-template-columns: 1fr; 

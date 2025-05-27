@@ -2,14 +2,14 @@ from .models import Spents, Earnings, MonoToken, MonoAccount, Account, SpentCate
 from .services.mono_api import MonobankAPI
 from .forms import RegisterUserForm, LoginUserForm, TransactionForm
 
-from django.shortcuts import render, redirect, HttpResponseRedirect, HttpResponse
+from django.shortcuts import render, redirect, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.db import transaction
 from dateutil.relativedelta import relativedelta
 from datetime import datetime, timedelta, date
-from django.db.models import Sum
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import AccessMixin
 from django.views import View
@@ -20,9 +20,8 @@ from django.contrib.auth import login, logout
 from django.utils import timezone
 
 from operator import attrgetter
-from itertools import chain
 import json
-import random
+from decimal import Decimal
 from .tasks import test_task
 
 
@@ -80,16 +79,128 @@ class HomeView(View):
                 )
 
         elif action == 'add_balance':
-            # TODO
-            pass
+            try:
+                account_id = request.POST.get('account_id')
+                category_value = request.POST.get('category')
+                amount = request.POST.get('amount')
+                date_str = request.POST.get('date')
+                description = request.POST.get('description')
+
+                if not all([account_id, category_value, amount, date_str]):
+                    messages.error(request, "All fields (account, category, amount, date) are required.")
+                    return redirect('home')
+
+                try:
+                    if int(amount) <= 0:
+                        messages.error(request, "Amount must be a positive number.")
+                        return redirect('home')
+
+                    date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                    current_time = datetime.now().time()
+                    time_create = datetime.combine(date_obj.date(), current_time)
+                except ValueError as e:
+                    messages.error(request, "Invalid date or amount format. Please check your input.")
+                    return redirect('home')
+
+                try:
+                    account = Account.objects.get(id=account_id, user=request.user)
+                except Account.DoesNotExist:
+                    messages.error(request, "Selected account does not exist or you don't have permission to access it.")
+                    return redirect('home')
+
+                try:
+                    base_cat = EarnCategory.objects.get(value=category_value)
+                    category = base_cat
+                except EarnCategory.DoesNotExist:
+                    try:
+                        user_cat = UserCategory.objects.get(value=category_value, is_spent='earn')
+                        category = user_cat
+                    except UserCategory.DoesNotExist:
+                        messages.error(request, "Selected category is invalid or does not exist.")
+                        return redirect('home')
+
+                Earnings.objects.create(
+                    account=account,
+                    category=category,
+                    amount=amount,  
+                    time_create=time_create,
+                    time_update=time_create,
+                    description=description,
+                    user=request.user
+                )
+
+                account.balance = Decimal(str(account.balance.to_decimal())) + Decimal(str(amount))
+                account.save()
+
+                return redirect('home')
+
+            except Exception as e:
+                messages.error(request, f"An unexpected error occurred: {str(e)}")
+                return redirect('home')
         
         elif action == 'subtract_balance':
-            # TODO
-            pass
+            try:
+                account_id = request.POST.get('account_id')
+                category_value = request.POST.get('category')
+                amount = request.POST.get('amount')
+                date_str = request.POST.get('date')
+                description = request.POST.get('description')
+
+                if not all([account_id, category_value, amount, date_str]):
+                    messages.error(request, "All fields (account, category, amount, date) are required.")
+                    return redirect('home')
+
+                try:
+                    if int(amount) <= 0:
+                        messages.error(request, "Amount must be a positive number.")
+                        return redirect('home')
+
+                    date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+                    current_time = datetime.now().time()
+                    time_create = datetime.combine(date_obj.date(), current_time)
+                except ValueError as e:
+                    messages.error(request, "Invalid date or amount format. Please check your input.")
+                    return redirect('home')
+
+                try:
+                    account = Account.objects.get(id=account_id, user=request.user)
+                except Account.DoesNotExist:
+                    messages.error(request, "Selected account does not exist or you don't have permission to access it.")
+                    return redirect('home')
+
+                try:
+                    base_cat = SpentCategory.objects.get(value=category_value)
+                    category = base_cat
+                except SpentCategory.DoesNotExist:
+                    try:
+                        user_cat = UserCategory.objects.get(value=category_value, is_spent='spent')
+                        category = user_cat
+                    except UserCategory.DoesNotExist:
+                        messages.error(request, "Selected category is invalid or does not exist.")
+                        return redirect('home')
+
+                Spents.objects.create(
+                    account=account,
+                    category=category,
+                    amount=amount,  
+                    time_create=time_create,
+                    time_update=time_create,
+                    description=description,
+                    user=request.user
+                )
+
+                account.balance = Decimal(str(account.balance.to_decimal())) - Decimal(str(amount))
+                account.save()
+
+                return redirect('home')
+
+            except Exception as e:
+                messages.error(request, f"An unexpected error occurred: {str(e)}")
+                return redirect('home')
 
         elif action == 'add_category_e':
             if not request.user.is_authenticated:
-                return HttpResponse("User not authenticated", status=401)
+                return redirect('home')
             
             try:
                 new_cat = UserCategory.objects.create(
@@ -99,13 +210,13 @@ class HomeView(View):
                     icon=request.POST.get('category_icon', '📌'),
                     is_spent='earn'
                 )
-                return HttpResponse(f"Category {new_cat.name} created successfully", status=200)
+                return redirect('home')
             except ValueError as e:
-                return HttpResponse(f"Error creating category: {str(e)}", status=400)
+                return redirect('home')
 
         elif action == 'add_category_s':
             if not request.user.is_authenticated:
-                return HttpResponse("User not authenticated", status=401)
+                return redirect('home')
             
             try:
                 new_cat = UserCategory.objects.create(
@@ -115,9 +226,9 @@ class HomeView(View):
                     icon=request.POST.get('category_icon', '📌'),
                     is_spent='spent'
                 )
-                return HttpResponseRedirect(request.path_info)
+                return redirect('home')
             except ValueError as e:
-                return HttpResponseRedirect(request.path_info)
+                return redirect('home')
 
         elif action == 'update':
             account_id = request.POST.get('account_id')
@@ -139,18 +250,6 @@ class HomeView(View):
 
         return HttpResponseRedirect(request.path_info)
 
-
-class AddTransactionView(LoginRequiredMixin, View):
-    def get(self, request):
-        form = TransactionForm()
-        return render(request, 'finance/new_transaction.html', {'form': form})
-    
-    def post(self, request):
-            form = TransactionForm(request.POST)
-            if form.is_valid():
-                form.save(user=request.user)
-                return redirect('expenses')
-            
 
 class RegisterUser(CreateView):
     form_class = RegisterUserForm
@@ -193,7 +292,7 @@ class UserProfile(LoginRequiredMixin, View):
 
         period = request.GET.get('period', 'month')
 
-        end_date = datetime.now()
+        end_date = timezone.now()
         if period == 'week':
             start_date = end_date - relativedelta(weeks=1)
         elif period == 'month':
@@ -203,31 +302,46 @@ class UserProfile(LoginRequiredMixin, View):
         else:
             start_date = end_date - relativedelta(months=1)
 
-        spents = Spents.objects.filter(
-            user=user,
-            time_create__range=[start_date, end_date]
-        )
-        earnings = Earnings.objects.filter(
-            user=user,
-            time_create__range=[start_date, end_date]
-        )
+        all_spents = Spents.objects.filter(user=user)
+        all_earnings = Earnings.objects.filter(user=user)
 
-        total_spending = sum(transaction.amount.to_decimal() for transaction in spents) \
-            if spents else 0
-        total_earning = sum(transaction.amount.to_decimal() for transaction in earnings) \
-            if earnings else 0
+        spents = [s for s in all_spents if start_date <= s.time_create <= end_date]
+        earnings = [e for e in all_earnings if start_date <= e.time_create <= end_date]
 
-        # Check if the request is AJAX
+        total_spending = sum(transaction.amount.to_decimal() for transaction in spents) if spents else 0
+        total_earning = sum(transaction.amount.to_decimal() for transaction in earnings) if earnings else 0
+
+        total_all_spending = sum(transaction.amount.to_decimal() for transaction in all_spents) if all_spents else 0
+        total_all_earning = sum(transaction.amount.to_decimal() for transaction in all_earnings) if all_earnings else 0
+
+        total_all_diff = total_all_earning - total_all_spending
+
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
-                'total_spending': float(total_spending),  # Convert to float for JSON serialization
-                'total_earning': float(total_earning),
+                'total_spending': float(total_spending),  
+                'total_earning': float(total_earning),   
+                'spents': [
+                    {'id': s.id, 'amount': float(s.amount.to_decimal()), 'time_create': s.time_create.isoformat()}
+                    for s in spents
+                ], 
+                'earnings': [
+                    {'id': e.id, 'amount': float(e.amount.to_decimal()), 'time_create': e.time_create.isoformat()}
+                    for e in earnings
+                ], 
             })
 
         context = {
             'user': user,
             'total_spending': total_spending,
             'total_earning': total_earning,
+            'total_all_spending': total_all_spending,
+            'total_all_earning': total_all_earning,
+            'total_all_diff': total_all_diff,
+            'class': 'minus' if total_all_diff < 0 else 'plus',
+            'spents': spents,
+            'earnings': earnings,
+            'all_spents': all_spents,
+            'all_earnings': all_earnings,
             'selected_period': period,
         }
         return render(request, 'finance/profile.html', context)
@@ -240,11 +354,9 @@ class UserExpenses(LoginRequiredMixin, View):
         transaction_type = request.GET.get('transaction_type', 'all')
         sort_by = request.GET.get('sort_by', 'date_desc')
 
-        # Фільтрація за типом транзакцій
         spents = Spents.objects.filter(user=user)
         earnings = Earnings.objects.filter(user=user)
 
-        # Фільтрація за періодом
         now = timezone.now()
         if period == 'year':
             spents = spents.filter(time_update__gte=now - timedelta(days=365))
@@ -256,7 +368,6 @@ class UserExpenses(LoginRequiredMixin, View):
             spents = spents.filter(time_update__gte=now - timedelta(days=7))
             earnings = earnings.filter(time_update__gte=now - timedelta(days=7))
 
-        # Об'єднання транзакцій
         if transaction_type == 'spent':
             transactions = list(spents)
         elif transaction_type == 'earning':
@@ -264,17 +375,15 @@ class UserExpenses(LoginRequiredMixin, View):
         else:
             transactions = list(spents) + list(earnings)
 
-        # Сортування
         if sort_by == 'date_asc':
             transactions = sorted(transactions, key=attrgetter('time_update'))
         elif sort_by == 'amount_desc':
             transactions = sorted(transactions, key=lambda x: x.amount.to_decimal(), reverse=True)
         elif sort_by == 'amount_asc':
             transactions = sorted(transactions, key=lambda x: x.amount.to_decimal())
-        else:  # date_desc
+        else:
             transactions = sorted(transactions, key=attrgetter('time_update'), reverse=True)
 
-        # Обчислення загальних сум
         total_expenses = sum(spent.amount.to_decimal() for spent in spents)
         total_earnings = sum(earning.amount.to_decimal() for earning in earnings)
         profit = total_earnings - total_expenses

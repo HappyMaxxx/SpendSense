@@ -37,8 +37,8 @@ class Spents(models.Model):
     category = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    time_create = models.DateTimeField(auto_now_add=True)
-    time_update = models.DateTimeField(auto_now=True)
+    time_create = models.DateTimeField()
+    time_update = models.DateTimeField()
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='spents')
     
     def __str__(self):
@@ -50,8 +50,8 @@ class Earnings(models.Model):
     category = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    time_create = models.DateTimeField(auto_now_add=True)
-    time_update = models.DateTimeField(auto_now=True)
+    time_create = models.DateTimeField()
+    time_update = models.DateTimeField()
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='earnings')
 
     def __str__(self):

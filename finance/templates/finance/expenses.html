@@ -10,7 +10,7 @@
 </button>
 
 <div class="center_div" style="margin-top: 0 !important;">
-<p>Total {{ profit }}$</p>
+<p>Total {{ profit }}₴</p>
 </div>
 
 <div class="expenses-list">
@@ -21,18 +21,18 @@
         <h3 class="expense-h3">
             {{ date_group.grouper|date:"d.m.Y" }}
             {% if summa == 0 %}
-                <span class="zero">{{ summa }}$</span>
+                <span class="zero">{{ summa }}₴</span>
             {% elif summa > 0 %} 
-                <span class="profit">+{{ summa }}$</span>
+                <span class="profit">+{{ summa }}₴</span>
             {% else %}
-                <span class="loss">{{ summa }}$</span>
+                <span class="loss">{{ summa }}₴</span>
             {% endif %}
         </h3>
         <ul>
             {% for expense in date_group.list %}
                 <li class="expens_elem">
-                    {{ expense.time_update|date:"H:i" }} - {{ expense.description }}:
-                    {% if expense|is_spent %}-{% else %}+{% endif %}{{ expense.amount }}$
+                    {{ expense.time_update|date:"H:i" }} {% if expense.description %} - {% endif %} {{ expense.description }}:
+                    {% if expense|is_spent %}-{% else %}+{% endif %}{{ expense.amount }}₴
                     <div class="expense-actions">
                         {% if not expense|is_spent %}
                             <button onclick="editEarning('{{ expense.id }}')" title="Edit">

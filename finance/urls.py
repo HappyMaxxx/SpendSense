@@ -9,7 +9,6 @@ urlpatterns = [
     path('login/', views.LoginUser.as_view(), name='auth'),
     path('logout/', views.LogoutUser.as_view(), name='logout'),
     path('profile/', views.UserProfile.as_view(), name='profile'),
-    path('new_transaction/', views.AddTransactionView.as_view(), name='new_transaction'),
     path('expenses/', views.UserExpenses.as_view(), name='expenses'),
     path("link_monobank/", views.link_monobank, name="link_monobank"),
     path("monobank/", views.monobank_info_view, name="monobank_info"),
