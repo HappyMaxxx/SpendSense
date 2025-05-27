@@ -1,13 +1,13 @@
-from .models import Spents, Earnings, MonoToken, MonoAccount, Account
+from .models import Spents, Earnings, MonoToken, MonoAccount, Account, SpentCategory, EarnCategory, UserCategory
 from .services.mono_api import MonobankAPI
 from .forms import RegisterUserForm, LoginUserForm, TransactionForm
 
-from django.shortcuts import render, redirect, HttpResponseRedirect
+from django.shortcuts import render, redirect, HttpResponseRedirect, HttpResponse
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.db import transaction
 from dateutil.relativedelta import relativedelta
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from django.db.models import Sum
 
 from django.contrib.auth.decorators import login_required
@@ -20,6 +20,7 @@ from django.contrib.auth import login, logout
 from django.utils import timezone
 
 from operator import attrgetter
+from itertools import chain
 import json
 import random
 from .tasks import test_task
@@ -43,8 +44,19 @@ class HomeView(View):
         total_balance = sum(acc.balance.to_decimal() for acc in user_accs) \
             if user_accs else 0
 
+        earn_categories = EarnCategory.objects.all()
+        user_categories_e = UserCategory.objects.filter(user=request.user, is_spent='earn')
+        spent_categories = SpentCategory.objects.all()
+        user_categories_s = UserCategory.objects.filter(user=request.user, is_spent='spent')
+        today_date = date.today().isoformat()
+
         data = {'total_balance': total_balance,
-                'accounts': user_accs}
+                'accounts': user_accs,
+                'earn_categories':  earn_categories,
+                'user_categories_e': user_categories_e if user_categories_e.exists() else [],
+                'spent_categories': spent_categories,
+                'user_categories_s': user_categories_s if user_categories_s.exists() else [],
+                'today': today_date}
 
         return render(request, 'finance/index.html', data)
 
@@ -68,20 +80,44 @@ class HomeView(View):
                 )
 
         elif action == 'add_balance':
-            account_id = request.POST.get('account_id')
-            amount = float(request.POST.get('amount', 0))
-            if account_id and amount:
-                account = user_accs.get(id=account_id)
-                account.balance += amount
-                account.save()
-
+            # TODO
+            pass
+        
         elif action == 'subtract_balance':
-            account_id = request.POST.get('account_id')
-            amount = float(request.POST.get('amount', 0))
-            if account_id and amount:
-                account = user_accs.get(id=account_id)
-                account.balance -= amount
-                account.save()
+            # TODO
+            pass
+
+        elif action == 'add_category_e':
+            if not request.user.is_authenticated:
+                return HttpResponse("User not authenticated", status=401)
+            
+            try:
+                new_cat = UserCategory.objects.create(
+                    user=request.user,
+                    name=request.POST.get('category_name'),
+                    value=(request.POST.get('category_name')).lower(),
+                    icon=request.POST.get('category_icon', '📌'),
+                    is_spent='earn'
+                )
+                return HttpResponse(f"Category {new_cat.name} created successfully", status=200)
+            except ValueError as e:
+                return HttpResponse(f"Error creating category: {str(e)}", status=400)
+
+        elif action == 'add_category_s':
+            if not request.user.is_authenticated:
+                return HttpResponse("User not authenticated", status=401)
+            
+            try:
+                new_cat = UserCategory.objects.create(
+                    user=request.user,
+                    name=request.POST.get('category_name'),
+                    value=request.POST.get('category_name').lower(),
+                    icon=request.POST.get('category_icon', '📌'),
+                    is_spent='spent'
+                )
+                return HttpResponseRedirect(request.path_info)
+            except ValueError as e:
+                return HttpResponseRedirect(request.path_info)
 
         elif action == 'update':
             account_id = request.POST.get('account_id')

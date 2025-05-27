@@ -574,6 +574,46 @@ button[type="submit"] {
     color: #1e90ff;
 }
 
+.category-grid label {
+    flex: 1 1 30%;
+    text-align: center;
+    cursor: pointer;
+}
+
+.category-grid span {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    display: block;
+    transition: all 0.3s;
+}
+
+.category-grid input[type="radio"]:checked + span {
+    background: #4CAF50;
+    border-color: #4CAF50;
+    color: #fff;
+}
+
+.add-category-div {
+    flex: 1 1 30%;
+    text-align: center;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100% + 12.8px;
+}
+
+.add-category {
+    cursor: pointer;
+    padding: 10px;
+    /* padding-top: 13% !important; */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 24px;
+    width: 100%;
+    height: 100%;
+}
 
 @media (max-width: 480px) {
     .accounts-grid {

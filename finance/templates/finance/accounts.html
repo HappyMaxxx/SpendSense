@@ -42,21 +42,136 @@
             <span class="close" onclick="document.getElementById('editAccountModal-{{ account.id }}').style.display='none'">×</span>
             <h3 style="margin-bottom: 1rem;">{{ account.name }}</h3>
             <div class="action-buttons">
-                <form method="post" action="{% url 'home' %}" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="add_balance">
-                    <input type="hidden" name="account_id" value="{{ account.id }}">
-                    <button type="submit">+</button>
-                </form>
-                <form method="post" action="{% url 'home' %}" style="display:inline;">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="subtract_balance">
-                    <input type="hidden" name="account_id" value="{{ account.id }}">
-                    <button type="submit">-</button>
-                </form>
-
+                <button onclick="document.getElementById('editAccountModal-{{ account.id }}').style.display='none'; document.getElementById('addBalanceModal-{{ account.id }}').style.display='block';">+</button>
+                <button onclick="document.getElementById('editAccountModal-{{ account.id }}').style.display='none'; document.getElementById('subtractBalanceModal-{{ account.id }}').style.display='block';">-</button>
                 <button onclick="document.getElementById('editAccountModal-{{ account.id }}').style.display='none'; document.getElementById('settingsModal-{{ account.id }}').style.display='block';">Settings</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal for adding balance -->
+    <div id="addBalanceModal-{{ account.id }}" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('addBalanceModal-{{ account.id }}').style.display='none'">×</span>
+            <h3>Add to {{ account.name }}</h3>
+            <form method="post" action="{% url 'home' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_balance">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <label>Category:</label>
+                <div class="category-grid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+                    {% for category in earn_categories %}
+                        <label style="flex: 1 1 30%; text-align: center;">
+                            <input type="radio" name="category" value="{{ category.value }}" required style="display: none;">
+                            <span style="cursor: pointer; padding: 10px; border: 1px solid #ccc; border-radius: 5px; display: flex; flex-direction: column; align-items: center;">
+                                <span style="border: none; padding: 0 !important;">{{ category.icon }}</span> 
+                                <span style="border: none; padding: 0 !important;">{{ category.name }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                    {% for category in user_categories_e %}
+                        <label style="flex: 1 1 30%; text-align: center;">
+                            <input type="radio" name="category" value="{{ category.value }}" required style="display: none;">
+                            <span style="cursor: pointer; padding: 10px; border: 1px solid #ccc; border-radius: 5px; display: flex; flex-direction: column; align-items: center;">
+                                <span style="border: none; padding: 0 !important;">{{ category.icon }}</span> 
+                                <span style="border: none; padding: 0 !important;">{{ category.name }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                    <div class="add-category-div">
+                        <span class="add-category" onclick="document.getElementById('addCategoryModal-earn-{{ account.id }}').style.display='block';">+</span>
+                    </div>
+                </div>
+                <label for="add-amount-{{ account.id }}">Amount:</label>
+                <input type="number" id="add-amount-{{ account.id }}" name="amount" step="0.01" required>
+                <label for="add-date-{{ account.id }}">Date:</label>
+                <input type="date" id="add-date-{{ account.id }}" name="date" value="{{ today }}" required>
+                <label for="add-description-{{ account.id }}">Description:</label>
+                <textarea id="add-description-{{ account.id }}" name="description" rows="3" style="width: 100%;"></textarea>
+                <button type="submit">Add</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for subtracting balance -->
+    <div id="subtractBalanceModal-{{ account.id }}" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('subtractBalanceModal-{{ account.id }}').style.display='none'">×</span>
+            <h3>Subtract from {{ account.name }}</h3>
+            <form method="post" action="{% url 'home' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="subtract_balance">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <label>Category:</label>
+                <div class="category-grid" style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem;">
+                    {% for category in spent_categories %}
+                        <label style="flex: 1 1 30%; text-align: center;">
+                            <input type="radio" name="category" value="{{ category.value }}" required style="display: none;">
+                            <span style="cursor: pointer; padding: 10px; border: 1px solid #ccc; border-radius: 5px; display: flex; flex-direction: column; align-items: center;">
+                                <span style="border: none; padding: 0 !important;">{{ category.icon }}</span> 
+                                <span style="border: none; padding: 0 !important;">{{ category.name }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                    {% for category in user_categories_s %}
+                        <label style="flex: 1 1 30%; text-align: center;">
+                            <input type="radio" name="category" value="{{ category.value }}" required style="display: none;">
+                            <span style="cursor: pointer; padding: 10px; border: 1px solid #ccc; border-radius: 5px; display: flex; flex-direction: column; align-items: center;">
+                                <span style="border: none; padding: 0 !important;">{{ category.icon }}</span> 
+                                <span style="border: none; padding: 0 !important;">{{ category.name }}</span>
+                            </span>
+                        </label>
+                    {% endfor %}
+                    <div class="add-category-div">
+                        <span class="add-category" onclick="document.getElementById('addCategoryModal-spent-{{ account.id }}').style.display='block';">+</span>
+                    </div>
+                </div>
+                <label for="subtract-amount-{{ account.id }}">Amount:</label>
+                <input type="number" id="subtract-amount-{{ account.id }}" name="amount" step="0.01" required>
+                <label for="subtract-date-{{ account.id }}">Date:</label>
+                <input type="date" id="subtract-date-{{ account.id }}" name="date" value="{{ today }}" required>
+                <label for="subtract-description-{{ account.id }}">Description:</label>
+                <textarea id="subtract-description-{{ account.id }}" name="description" rows="3" style="width: 100%;"></textarea>
+                <button type="submit">Subtract</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for adding custom earn category -->
+    <div id="addCategoryModal-earn-{{ account.id }}" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('addCategoryModal-earn-{{ account.id }}').style.display='none'; document.getElementById('addBalanceModal-{{ account.id }}').style.display='block';">×</span>
+            <h3>Add New Earn Category</h3>
+            <form method="post" action="{% url 'home' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_category_e">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <input type="hidden" name="category_type" value="earn">
+                <label for="category-name-earn-{{ account.id }}">Category Name:</label>
+                <input type="text" id="category-name-earn-{{ account.id }}" name="category_name" required>
+                <label for="category-icon-earn-{{ account.id }}">Icon (Emoji):</label>
+                <input type="text" id="category-icon-earn-{{ account.id }}" name="category_icon" placeholder="e.g., 💰" required>
+                <button type="submit">Add Category</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal for adding custom spent category -->
+    <div id="addCategoryModal-spent-{{ account.id }}" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('addCategoryModal-spent-{{ account.id }}').style.display='none'; document.getElementById('subtractBalanceModal-{{ account.id }}').style.display='block';">×</span>
+            <h3>Add New Spent Category</h3>
+            <form method="post" action="{% url 'home' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="add_category_s">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+                <input type="hidden" name="category_type" value="spent">
+                <label for="category-name-spent-{{ account.id }}">Category Name:</label>
+                <input type="text" id="category-name-spent-{{ account.id }}" name="category_name" required>
+                <label for="category-icon-spent-{{ account.id }}">Icon (Emoji):</label>
+                <input type="text" id="category-icon-spent-{{ account.id }}" name="category_icon" placeholder="e.g., 🛒" required>
+                <button type="submit">Add Category</button>
+            </form>
         </div>
     </div>
 
