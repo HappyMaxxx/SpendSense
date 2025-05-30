@@ -92,3 +92,8 @@ class UserCategory(models.Model):
             return f'UserCat {self.icon} {self.name} spent'
         else:
             return f'UserCat {self.icon} {self.name} earn'
+
+
+class UserProfile(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_profile')
+    api_key = models.CharField(max_length=32, unique=True, blank=True, null=True)

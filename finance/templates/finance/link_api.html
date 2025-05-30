@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <!-- SPENDSENS API -->
+
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Spendsens API</h1>
+    
+    <p class="text-gray-600 mb-4 text-sm">
+        Use the Spendsens API to programmatically access your expense data. Generate an API token below to integrate with your applications.
+    </p>
+
+    <p>
+        Status: {% if profile.api_key %} Generated {% else %} Not generated {% endif %}
+    </p>
+
+    {% if profile.api_key %}
+        <div class="space-y-4">
+            <div class="relative">
+                <label for="api_token" class="block text-sm font-medium text-gray-700">Your API Token</label>
+                <input 
+                    type="password" 
+                    id="api_token" 
+                    value="{{ profile.api_key }}" 
+                    readonly 
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100"
+                >
+            </div>
+            <div class="flex space-x-4" style="gap:5%; margin-top: 1rem; margin-bottom: 2rem;">
+                <button 
+                    type="button" 
+                    onclick="toggleTokenVisibility()" 
+                    class="absolute inset-y-0 right-0 pr-3 flex items-center text-sm text-gray-600 hover:text-gray-800 mt-6"
+                >
+                    Show
+                </button>
+                <button 
+                    type="button" 
+                    onclick="copyToken()" 
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                    Copy Token
+                </button>
+                <button 
+                    type="button" 
+                    onclick="deleteToken()" 
+                    class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                    Delete Token
+                </button>
+            </div>
+        </div>
+    {% else %}
+        <div class="center_div">
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="ss_api">
+                <button 
+                    type="submit" 
+                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                    style="margin-bottom: 15%;"
+                >
+                    Generate API Token
+                </button>
+            </form>
+        </div>
+    {% endif %}
+    
+    <!-- MONO API -->
+
+    <h1 class="text-2xl font-bold text-gray-800 mb-6 text-center">Connect Your Monobank Account</h1>
+    
+    <p class="text-gray-600 mb-4 text-sm">
+        To connect your Monobank account, enter your API token. You can get it from the 
+        <a href="https://api.monobank.ua/" target="_blank" class="text-blue-600 hover:underline">Monobank API page</a>.
+    </p>
+
+    <p>
+        Status: {% if user.monotoken %} Linked {% else %} Not linked {% endif %}
+    </p>
+
+    {% if error %}
+        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
+
+    <form method="post" class="space-y-4" id="mono_form">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="mono_api">
+        <div>
+            <label for="mono_token" class="block text-sm font-medium text-gray-700">Monobank API Token</label>
+            <input 
+                type="text" 
+                name="mono_token" 
+                id="mono_token" 
+                required 
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Enter your Monobank token"
+            >
+        </div>
+        <div class="center_div">
+            <button type="submit">
+                Link Account
+            </button>
+        </div>
+    </form>
+
+    <div class="sa_buttons">
+        {% if user.monotoken %}
+            <button onclick="unlinkMono()">
+                Unlink Account
+            </button>
+        {% endif %}
+
+        <a href="{% url 'profile' %}">
+            <button>Back to Profile</button>
+        </a>
+    </div>
+</div>
+
+<!-- SPENDSENS API SCRIPTS -->
+<script>
+    function toggleTokenVisibility() {
+        const tokenInput = document.getElementById('api_token');
+        const toggleButton = tokenInput.nextElementSibling;
+        if (tokenInput.type === 'password') {
+            tokenInput.type = 'text';
+            toggleButton.textContent = 'Hide';
+        } else {
+            tokenInput.type = 'password';
+            toggleButton.textContent = 'Show';
+        }
+    }
+    
+    function copyToken() {
+        const tokenInput = document.getElementById('api_token');
+        tokenInput.select();
+        document.execCommand('copy');
+    }
+    
+    function deleteToken() {
+        if (confirm('Are you sure you want to delete your API token?')) {
+            window.location.href = `/api/delete-api-token/`;
+        }
+    }
+</script>
+
+<!-- MONO API SCRIPTS -->
+<script>
+    document.getElementById('mono_form').addEventListener('submit', function(e) {
+        const tokenInput = document.getElementById('mono_token').value.trim();
+        if (tokenInput.length < 10) {
+            e.preventDefault();
+            alert('Please enter a valid Monobank token.');
+        }
+    });
+</script>
+
+<script>
+function unlinkMono() {
+    if (confirm('Are you sure you want to unlink monobank?')) {
+        window.location.href = `/api/delete-mono-token/`;
+    }
+}
+</script>
+{% endblock %}

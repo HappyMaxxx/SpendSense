@@ -39,19 +39,11 @@
     </div>
 </div>
 
-{% if user.monotoken %}
-    <div class="center_div">
-        <a href="{% url 'link_monobank' %}">
-            <button>Change Token</button>
-        </a>
-    </div>
-{% else %}
-    <div class="center_div">
-        <a href="{% url 'link_monobank' %}">
-            <button>Link Token</button>
-        </a>
-    </div>
-{% endif %}
+<div class="center_div">
+    <a href="{% url 'link_api' %}">
+        <button>Api Tokens</button>
+    </a>
+</div>
 
 <div class="right_div">
     <a href="{% url 'logout' %}">
