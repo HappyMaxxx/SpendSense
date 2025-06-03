@@ -73,6 +73,11 @@ header h1 {
     margin-bottom: 0.5rem;
 }
 
+a {
+    color: var(--text-color);
+    text-decoration: none
+}
+
 .set_button {
     position: absolute;
     background: none;

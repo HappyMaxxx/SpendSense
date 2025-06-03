@@ -15,6 +15,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import AccessMixin
 from django.views import View
 from django.views.generic import CreateView
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, logout
@@ -34,6 +36,51 @@ class LoginRequiredMixin(AccessMixin):
         if not request.user.is_authenticated:
             return super().handle_no_permission()
         return super().dispatch(request, *args, **kwargs)
+    
+
+class RegisterUser(CreateView):
+    form_class = RegisterUserForm
+    template_name = 'finance/register.html'
+    success_url = '/login'
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('profile')
+        return super().get(request, *args, **kwargs)
+
+    @transaction.atomic
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        if User.objects.filter(email=user.email).exists():
+            form.add_error('email', "User with this email already exists")
+            return self.form_invalid(form)
+        
+        user.save()
+
+        login(self.request, user)
+        return redirect('profile')
+
+
+class LoginUser(LoginView):
+    form_class =  LoginUserForm
+    template_name = 'finance/login.html'
+
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('profile')
+        return super().get(request, *args, **kwargs)
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next') or self.request.POST.get('next')
+        if next_url:
+            return next_url
+        return reverse_lazy('profile')
+
+
+class LogoutUser(View):
+    def get(self, request):
+        logout(request)
+        return redirect('auth')
 
 
 class HomeView(View):
@@ -251,38 +298,6 @@ class HomeView(View):
                 account.delete()
 
         return HttpResponseRedirect(request.path_info)
-
-
-class RegisterUser(CreateView):
-    form_class = RegisterUserForm
-    template_name = 'finance/register.html'
-    success_url = '/login'
-
-    @transaction.atomic
-    def form_valid(self, form):
-        user = form.save(commit=False)
-        if User.objects.filter(email=user.email).exists():
-            form.add_error('email', "User with this email already exists")
-            return self.form_invalid(form)
-        
-        user.save()
-
-        login(self.request, user)
-        return redirect('profile')
-
-
-class LoginUser(LoginView):
-    form_class =  LoginUserForm
-    template_name = 'finance/login.html'
-
-    def get_success_url(self):
-        return reverse_lazy('profile')
-
-
-class LogoutUser(View):
-    def get(self, request):
-        logout(request)
-        return redirect('auth')
 
 
 class UserProfileView(LoginRequiredMixin, View):
@@ -524,6 +539,8 @@ def edit_transaction(request, transaction_id, transaction_type):
     elif transaction_type == 1:
         transaction = Earnings.objects.filter(id=transaction_id, user=user).first()
 
+    trans_amount = transaction.amount.to_decimal()
+
     if not transaction:
         return render(request, 'finance/404.html', status=404)
 
@@ -531,6 +548,12 @@ def edit_transaction(request, transaction_id, transaction_type):
         form = TransactionForm(request.POST, instance=transaction)
         if form.is_valid():
             form.save(user=user)
+            acc = transaction.account
+            acc_bal = acc.balance.to_decimal()
+            
+            acc.balance = acc_bal + (trans_amount - form.cleaned_data['amount'])
+            acc.save()
+
             return redirect('expenses')
     else:
         form = TransactionForm(instance=transaction, initial={'transaction_type': 'expense' if transaction_type == 0 else 'income'})

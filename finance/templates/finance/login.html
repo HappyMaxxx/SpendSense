@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<h1 style="margin-bottom: 1rem;">Login</h1>
 
 <form method="post" id="loginForm">
     {% csrf_token %}
@@ -23,7 +24,8 @@
         </a>
     </div>
 
-    <p>Not a member? <a href="{% url 'register' %}">Sign up</a></p>
+    <p>Not a member? <a href="{% url 'register' %}"
+        style="font-size: 1.1rem; font-weight: bold;">Sign up</a></p>
 </form>
 
 <script>
