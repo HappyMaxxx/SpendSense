@@ -598,4 +598,48 @@ def delete_api_token(request):
         user_profile = None
     
     return render(request, 'finance/link_api.html')
-    
+
+# Outer Api
+
+def check_api_token(view_func):
+    def wrapper(request, *args, **kwargs):
+        api_token = request.headers.get('Authorization', '')
+        if api_token.startswith('Bearer '):
+            api_token = api_token[7:]
+        else:
+            return JsonResponse({'error': 'Token must statr with Bearer'}, status=401)
+        if not api_token:
+            return JsonResponse({'error': 'Token not given'}, status=401)
+        
+        try:
+            profile = UserProfile.objects.get(api_key=api_token)
+            request.api_user = profile.user
+        except UserProfile.DoesNotExist:
+            return JsonResponse({'error': 'Invalid token'}, status=401)
+        
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+@csrf_exempt
+@check_api_token
+@require_http_methods(["GET"])
+def api_user_accounts(request):
+    try:
+        accounts = Account.objects.filter(user=request.api_user)
+    except:
+        return JsonResponse({'error': 'Accounts cannot be found'}, status=401)
+
+    if accounts:
+        data = {
+            'username': request.api_user.username,
+            'accounts': [
+                {
+                    'account': account.name,
+                    'balance': account.balance.to_decimal(),
+                }
+                for account in accounts
+            ]
+        }
+
+        return JsonResponse(data)
+    return JsonResponse({'error': 'Accounts cannot be found'}, status=401)

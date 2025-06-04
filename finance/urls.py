@@ -19,5 +19,7 @@ urlpatterns = [
     path('api/edit-transaction/<int:transaction_id>/<int:transaction_type>/', views.edit_transaction, name='edit_transaction'),
     path('api/delete-transaction/<int:transaction_id>/<int:transaction_type>/', views.delete_transaction, name='delete_transaction'),
     path('api/delete-mono-token/', views.delete_mono_token, name='unlink_monobank'),
-    path('api/delete-api-token/', views.delete_api_token, name='unlink_api')
+    path('api/delete-api-token/', views.delete_api_token, name='unlink_api'),
+    # Outher API
+    path('api/accounts/', views.api_user_accounts, name='api_accounts'),
 ]
