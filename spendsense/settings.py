@@ -21,7 +21,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
-    'finance.apps.FinanceConfig', 
+    'finance.apps.FinanceConfig',
+    'mono.apps.MonoConfig',
 ]
 
 MIDDLEWARE = [

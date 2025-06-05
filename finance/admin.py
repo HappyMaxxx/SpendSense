@@ -19,12 +19,6 @@ class EarningsAdmin(admin.ModelAdmin):
     search_fields = ('description',)
 
 
-class MonoTokenAdmin(admin.ModelAdmin):
-    list_display = ("user", "created_at")
-    readonly_fields = ("created_at",)
-    exclude = ("token",)
-
-
 class AccountAdmin(admin.ModelAdmin):
     list_display = ('name', 'user', 'balance', 'currency')
     list_display_links = ('name', 'user')
@@ -50,7 +44,6 @@ class UserCategoryAdmin(admin.ModelAdmin):
 
 admin.site.register(Spents, SpentsAdmin)
 admin.site.register(Earnings, EarningsAdmin)
-admin.site.register(MonoToken, MonoTokenAdmin)
 admin.site.register(EarnCategory, EarnCategoryAdmin)
 admin.site.register(SpentCategory, SpentCategoryAdmin)
 admin.site.register(UserCategory, UserCategoryAdmin)

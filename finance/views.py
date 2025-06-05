@@ -1,8 +1,9 @@
-from .models import (Spents, Earnings, MonoToken, MonoAccount,
-                     Account, SpentCategory, EarnCategory, UserCategory, UserProfile)
-from .services.mono_api import MonobankAPI
+from .models import (Spents, Earnings, Account, SpentCategory,
+                     EarnCategory, UserCategory, UserProfile)
+from mono.models import MonoAccount, MonoToken
 from .forms import RegisterUserForm, LoginUserForm, TransactionForm
 
+from mono.services.mono_api import MonobankAPI
 from django.shortcuts import render, redirect, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.http import JsonResponse
@@ -21,6 +22,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, logout
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 
 from operator import attrgetter
 import json
@@ -453,54 +455,6 @@ def link_api(request):
         profile = None
     return render(request, "finance/link_api.html", {'profile': profile})
 
-@login_required
-def monobank_info_view(request):
-    try:
-        mono_token = MonoToken.objects.get(user=request.user)
-        token = mono_token.token
-    except MonoToken.DoesNotExist:
-        return render(request, "finance/link_api.html", {"error": "Token not found."}) 
-
-    try:
-        client_info = MonobankAPI.get_client_info(token)
-        raw_json = json.dumps(client_info, indent=2, ensure_ascii=False) 
-    except Exception as e:
-        client_info = None
-        raw_json = None
-
-    return render(request, "finance/client_info.html", {
-        "client_info": client_info,
-        "raw_json": raw_json
-    })
-
-@login_required
-def all_mono_transactions_view(request):
-    try:
-        mono_token = MonoToken.objects.get(user=request.user)
-    except MonoToken.DoesNotExist:
-        return render(request, "finance/link_api.html", {"error": "Token not found."}) 
-
-    token = mono_token.token
-    errors = []
-    try:
-        client_info = MonobankAPI.get_client_info(token)
-        account_id = client_info["accounts"][0]["id"]
-        transactions = MonobankAPI.get_all_transactions(token, account_id)
-
-        transactions.sort(key=lambda tx: tx.get("time", 0), reverse=True)
-    except Exception as e:
-        transactions = []
-        errors.append(e)
-
-    for tx in transactions:
-        tx['amount_norm'] = tx['amount'] / 100
-        tx['time'] = datetime.fromtimestamp(tx['time'])
-
-    return render(request, "finance/all_transactions.html", {
-        "transactions": transactions,
-        'errors': errors,
-    })
-
 def generate_unique_token():
     while True:
         token = secrets.token_hex(16)
@@ -581,15 +535,6 @@ def delete_transaction(request, transaction_id, transaction_type):
     transaction.delete()
     return redirect('expenses')
 
-def delete_mono_token(request):
-    user = request.user
-    try:
-        mono_token = MonoToken.objects.get(user=user)
-        mono_token.delete()
-    except MonoToken.DoesNotExist:
-        pass
-    return redirect('profile')
-
 def delete_api_token(request):
     try:
         user_profile = UserProfile.objects.get(user=request.user)
@@ -604,12 +549,14 @@ def delete_api_token(request):
 def check_api_token(view_func):
     def wrapper(request, *args, **kwargs):
         api_token = request.headers.get('Authorization', '')
+
+        if not api_token:
+            return JsonResponse({'error': 'Token not given'}, status=401)
+        
         if api_token.startswith('Bearer '):
             api_token = api_token[7:]
         else:
             return JsonResponse({'error': 'Token must statr with Bearer'}, status=401)
-        if not api_token:
-            return JsonResponse({'error': 'Token not given'}, status=401)
         
         try:
             profile = UserProfile.objects.get(api_key=api_token)
