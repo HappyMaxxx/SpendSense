@@ -590,3 +590,60 @@ def api_user_accounts(request):
 
         return JsonResponse(data)
     return JsonResponse({'error': 'Accounts cannot be found'}, status=401)
+
+@csrf_exempt
+@check_api_token
+@require_http_methods(["GET"])
+def api_user_transactions(request):
+    user = request.api_user
+    from_param = request.GET.get('from')
+    to_param = request.GET.get('to')
+
+    try:
+        if from_param:
+            from_date = parse_datetime(from_param)
+        else:
+            from_date = datetime.now() - timedelta(days=30)
+
+        if to_param:
+            to_date = parse_datetime(to_param)
+        else:
+            to_date = datetime.now()
+
+        spents = Spents.objects.filter(user=user)
+        earnings = Earnings.objects.filter(user=user)
+
+        spents = spents.filter(time_update__range=(from_date, to_date))
+        earnings = earnings.filter(time_update__range=(from_date, to_date))
+
+        if spents and earnings:
+            transactions = list(spents) + list(earnings)
+        elif earnings:
+            transactions = list(earnings)
+        elif spents:
+            transactions = list(spents)
+        else:
+            transactions = []
+
+    except Exception as e:
+        return JsonResponse({'error': 'Invalid date format. Use ISO 8601 (e.g., 2024-06-01T00:00:00)'}, status=400)
+
+    if transactions:
+        data = {
+            'username': request.api_user.username,
+            'transactions': [
+                {   
+                    'type': 'spent' if str(transaction).startswith("Trans") else 'earn',
+                    'amount': transaction.amount.to_decimal(),
+                    'category': transaction.category,
+                    'description': transaction.description,
+                    'account': transaction.account.name,
+                    'time_create': transaction.time_create.isoformat(),
+                    'time_update': transaction.time_update.isoformat(),
+                }
+                for transaction in transactions
+            ]
+        }
+        return JsonResponse(data)
+
+    return JsonResponse({'error': 'Transactions cannot be found'}, status=404)
