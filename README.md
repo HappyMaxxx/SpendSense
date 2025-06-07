@@ -37,7 +37,6 @@ cd spendsense
 > git fetch --unshallow
 > ```
 
-
 ### 2. Configure Environment Variables
 
 Create a `.env` file in the project root and add the following:
@@ -48,7 +47,7 @@ DEBUG=False
 ALLOWED_HOSTS=localhost,127.0.0.1
 ```
 
-> **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g.,_using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
+> **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g., using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
 
 ### 3. Collect Static Files
 
@@ -150,6 +149,8 @@ volumes:
   mongo_data:
 ```
 
+> **Important**: redis, celery and flower services are currently temporarily commented out, as they are not yet in use
+
 ## 🔧 Troubleshooting
 
 - **Port conflicts**: Ensure ports `8000`, `27017`, `6379`, and `5555` are free. Check with `sudo netstat -tuln | grep <port>`.
@@ -164,6 +165,133 @@ To access **SpendSense** or the Flower dashboard from another device on your loc
 1. Add your machine’s local IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` in the `.env` file.
 2. Ensure your firewall allows traffic on ports `8000` (Django) and `5555` (Flower).
 3. Access the app via `http://<your-ip>:8000` or Flower via `http://<your-ip>:5555` from another device.
+
+## 📚 API Documentation
+
+**SpendSense** provides an internal API for accessing user accounts and transactions. The API requires authentication via a Bearer token, which can be obtained from the user's profile in the application.
+
+### Authentication
+
+All API requests must include an `Authorization` header with a Bearer token:
+
+```
+Authorization: Bearer <your-api-token>
+```
+
+To obtain an API token:
+1. Log in to the **SpendSense** application.
+2. Navigate to the API settings page (`/link_api/`) and generate or retrieve your API token.
+
+### Endpoints
+
+#### 1. Get User Accounts
+
+- **URL**: `/api/v1/accounts/`
+- **Method**: `GET`
+- **Description**: Retrieves a list of accounts for the authenticated user.
+- **Response**:
+  - **Success (200)**:
+    ```json
+    {
+      "username": "<username>",
+      "accounts": [
+        {
+          "account": "<account_name>",
+          "balance": <balance>
+        },
+        ...
+      ]
+    }
+    ```
+  - **Error (401)**:
+    ```json
+    {
+      "error": "Token not given"
+    }
+    ```
+    ```json
+    {
+      "error": "Token must start with Bearer"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid token"
+    }
+    ```
+    ```json
+    {
+      "error": "Accounts cannot be found"
+    }
+    ```
+
+#### 2. Get User Transactions
+
+- **URL**: `/api/v1/transactions/`
+- **Method**: `GET`
+- **Description**: Retrieves transactions for the authenticated user, optionally filtered by date range.
+- **Query Parameters**:
+  - `from`: Start date in ISO 8601 format (e.g., `2024-06-01T00:00:00`). Defaults to 30 days ago.
+  - `to`: End date in ISO 8601 format (e.g., `2024-06-30T23:59:59`). Defaults to current date.
+- **Response**:
+  - **Success (200)**:
+    ```json
+    {
+      "username": "<username>",
+      "transactions": [
+        {
+          "type": "spent" | "earn",
+          "amount": <amount>,
+          "category": "<category_name>",
+          "description": "<description>",
+          "account": "<account_name>",
+          "time_create": "<ISO8601_timestamp>",
+          "time_update": "<ISO8601_timestamp>"
+        },
+        ...
+      ]
+    }
+    ```
+  - **Error (400)**:
+    ```json
+    {
+      "error": "Invalid date format. Use ISO 8601 (e.g., 2024-06-01T00:00:00)"
+    }
+    ```
+  - **Error (401)**:
+    ```json
+    {
+      "error": "Token not given"
+    }
+    ```
+    ```json
+    {
+      "error": "Token must start with Bearer"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid token"
+    }
+    ```
+  - **Error (404)**:
+    ```json
+    {
+      "error": "Transactions cannot be found"
+    }
+    ```
+
+### Example Usage
+
+#### Get User Accounts
+```bash
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/accounts/
+```
+
+#### Get Transactions for a Date Range
+```bash
+curl -H "Authorization: Bearer <your-api-token>" "http://localhost:8000/api/v1/transactions/?from=2024-06-01T00:00:00&to=2024-06-30T23:59:59"
+```
 
 ## 📜 License
 
