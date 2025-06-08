@@ -500,15 +500,80 @@ def edit_transaction(request, transaction_id, transaction_type):
 
     if request.method == 'POST':
         form = TransactionForm(request.POST, instance=transaction)
+        category_value = request.POST.get('category')
+        date_str = request.POST.get('date')
+
+        if not all([category_value, date_str]):
+            messages.error(request, "Category and date are required.")
+            return render(request, 'finance/edit_transaction.html', {
+                'form': form,
+                'transaction': transaction,
+                'transaction_id': transaction_id,
+                'transaction_type': transaction_type,
+                'earn_categories': EarnCategory.objects.all(),
+                'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
+                'spent_categories': SpentCategory.objects.all(),
+                'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
+            })
+
+        try:
+            date_obj = datetime.strptime(date_str, '%Y-%m-%d')
+            current_time = datetime.now().time()
+            time_update = datetime.combine(date_obj.date(), current_time)
+        except ValueError:
+            messages.error(request, "Invalid date format.")
+            return render(request, 'finance/edit_transaction.html', {
+                'form': form,
+                'transaction': transaction,
+                'transaction_id': transaction_id,
+                'transaction_type': transaction_type,
+                'earn_categories': EarnCategory.objects.all(),
+                'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
+                'spent_categories': SpentCategory.objects.all(),
+                'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
+            })
+
+        try:
+            if transaction_type == 1:
+                try:
+                    category = EarnCategory.objects.get(value=category_value)
+                except EarnCategory.DoesNotExist:
+                    category = UserCategory.objects.get(value=category_value, is_spent='earn', user=user)
+            else:
+                try:
+                    category = SpentCategory.objects.get(value=category_value)
+                except SpentCategory.DoesNotExist:
+                    category = UserCategory.objects.get(value=category_value, is_spent='spent', user=user)
+        except:
+            messages.error(request, "Invalid category selected.")
+            return render(request, 'finance/edit_transaction.html', {
+                'form': form,
+                'transaction': transaction,
+                'transaction_id': transaction_id,
+                'transaction_type': transaction_type,
+                'earn_categories': EarnCategory.objects.all(),
+                'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
+                'spent_categories': SpentCategory.objects.all(),
+                'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
+            })
+
         if form.is_valid():
-            form.save(user=user)
+            transaction = form.save(commit=False)
+            transaction.category = category
+            transaction.time_update = time_update
+            transaction.save()
+
             acc = transaction.account
             acc_bal = acc.balance.to_decimal()
-            
-            acc.balance = acc_bal + (trans_amount - form.cleaned_data['amount'])
+            new_amount = form.cleaned_data['amount']
+            if transaction_type == 1:
+                acc.balance = acc_bal - trans_amount + new_amount
+            else:
+                acc.balance = acc_bal + trans_amount - new_amount
             acc.save()
 
             return redirect('expenses')
+
     else:
         form = TransactionForm(instance=transaction, initial={'transaction_type': 'expense' if transaction_type == 0 else 'income'})
 
@@ -517,6 +582,10 @@ def edit_transaction(request, transaction_id, transaction_type):
         'transaction': transaction,
         'transaction_id': transaction_id,
         'transaction_type': transaction_type,
+        'earn_categories': EarnCategory.objects.all(),
+        'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
+        'spent_categories': SpentCategory.objects.all(),
+        'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
     }
     return render(request, 'finance/edit_transaction.html', context)
 
@@ -570,6 +639,15 @@ def check_api_token(view_func):
 @csrf_exempt
 @check_api_token
 @require_http_methods(["GET"])
+def api_check_token(request):
+    return JsonResponse({
+        'status': 'valid',
+        'user': request.api_user.username
+    })
+
+@csrf_exempt
+@check_api_token
+@require_http_methods(["GET"])
 def api_user_accounts(request):
     try:
         accounts = Account.objects.filter(user=request.api_user)
@@ -578,7 +656,7 @@ def api_user_accounts(request):
 
     if accounts:
         data = {
-            'username': request.api_user.username,
+            'user': request.api_user.username,
             'accounts': [
                 {
                     'account': account.name,
@@ -630,7 +708,7 @@ def api_user_transactions(request):
 
     if transactions:
         data = {
-            'username': request.api_user.username,
+            'user': request.api_user.username,
             'transactions': [
                 {   
                     'type': 'spent' if str(transaction).startswith("Trans") else 'earn',
@@ -647,3 +725,60 @@ def api_user_transactions(request):
         return JsonResponse(data)
 
     return JsonResponse({'error': 'Transactions cannot be found'}, status=404)
+
+@csrf_exempt
+@check_api_token
+@require_http_methods(["GET"])
+def api_categories_get(request):
+    user = request.api_user
+    type_param = request.GET.get('type')  # 'spent', 'earn' or None
+    user_param = request.GET.get('user')  # 'true', 'false' or None
+
+    include_user = user_param == 'true'
+    categories = []
+
+    try:
+        if type_param == 'spent':
+            categories += list(SpentCategory.objects.all())
+            if include_user:
+                categories = list(UserCategory.objects.filter(user=user, is_spent='spent'))
+            elif user_param is None:
+                categories += list(UserCategory.objects.filter(user=user, is_spent='spent'))
+
+        elif type_param == 'earn':
+            categories += list(EarnCategory.objects.all())
+            if include_user:
+                categories = list(UserCategory.objects.filter(user=user, is_spent='earn'))
+            elif user_param is None:
+                categories += list(UserCategory.objects.filter(user=user, is_spent='earn'))
+
+        elif type_param is None:
+            categories += list(SpentCategory.objects.all()) + list(EarnCategory.objects.all())
+            if include_user:
+                categories = list(UserCategory.objects.filter(user=user))
+            elif user_param is None:
+                categories += list(UserCategory.objects.filter(user=user))
+
+        else:
+            return JsonResponse({'error': 'Invalid type parameter. Must be "spent", "earn", or omitted.'}, status=400)
+    
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+    if categories:
+        data = {
+            'user': request.api_user.username,
+            'categories': [
+            {
+                'name': cat.name,
+                'value': cat.value,
+                'icon': getattr(cat, 'icon', None),
+                'type': getattr(cat, 'is_spent', 'earn' if isinstance(cat, EarnCategory) else 'spent'),
+                'transaction_name': str(cat),
+            }
+            for cat in categories
+            ]
+        }
+        return JsonResponse(data)
+
+    return JsonResponse({'error': 'Categories cannot be found'}, status=404)
