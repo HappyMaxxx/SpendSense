@@ -168,7 +168,7 @@ To access **SpendSense** or the Flower dashboard from another device on your loc
 
 ## 📚 API Documentation
 
-**SpendSense** provides an internal API for accessing user accounts and transactions. The API requires authentication via a Bearer token, which can be obtained from the user's profile in the application.
+**SpendSense** provides an internal API for accessing user accounts, transactions, and categories. The API requires authentication via a Bearer token, which can be obtained from the user's profile in the application.
 
 ### Authentication
 
@@ -184,7 +184,37 @@ To obtain an API token:
 
 ### Endpoints
 
-#### 1. Get User Accounts
+#### 1. Check API Token
+
+- **URL**: `/api/v1/check_token/`
+- **Method**: `GET`
+- **Description**: Validates the provided API token and returns the associated username if valid.
+- **Response**:
+  - **Success (200)**:
+    ```json
+    {
+      "status": "valid",
+      "user": "<username>"
+    }
+    ```
+  - **Error (401)**:
+    ```json
+    {
+      "error": "Token not given"
+    }
+    ```
+    ```json
+    {
+      "error": "Token must start with Bearer"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid token"
+    }
+    ```
+
+#### 2. Get User Accounts
 
 - **URL**: `/api/v1/accounts/`
 - **Method**: `GET`
@@ -193,7 +223,7 @@ To obtain an API token:
   - **Success (200)**:
     ```json
     {
-      "username": "<username>",
+      "user": "<username>",
       "accounts": [
         {
           "account": "<account_name>",
@@ -225,7 +255,7 @@ To obtain an API token:
     }
     ```
 
-#### 2. Get User Transactions
+#### 3. Get User Transactions
 
 - **URL**: `/api/v1/transactions/`
 - **Method**: `GET`
@@ -237,7 +267,7 @@ To obtain an API token:
   - **Success (200)**:
     ```json
     {
-      "username": "<username>",
+      "user": "<username>",
       "transactions": [
         {
           "type": "spent" | "earn",
@@ -281,7 +311,66 @@ To obtain an API token:
     }
     ```
 
+#### 4. Get Categories
+
+- **URL**: `/api/v1/categories/`
+- **Method**: `GET`
+- **Description**: Retrieves categories available to the authenticated user, optionally filtered by type or user-specific categories.
+- **Query Parameters**:
+  - `type`: Filter by category type (`spent`, `earn`, or omit for all).
+  - `user`: Filter by user-specific categories (`true` for only user categories, `false` for only system categories, or omit for both).
+- **Response**:
+  - **Success (200)**:
+    ```json
+    {
+      "user": "<username>",
+      "categories": [
+        {
+          "name": "<category_name>",
+          "value": "<category_value>",
+          "icon": "<category_icon>",
+          "type": "spent" | "earn",
+          "transaction_name": "<transaction_name>"
+        },
+        ...
+      ]
+    }
+    ```
+  - **Error (400)**:
+    ```json
+    {
+      "error": "Invalid type parameter. Must be 'spent', 'earn', or omitted."
+    }
+    ```
+  - **Error (401)**:
+    ```json
+    {
+      "error": "Token not given"
+    }
+    ```
+    ```json
+    {
+      "error": "Token must start with Bearer"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid token"
+    }
+    ```
+  - **Error (404)**:
+    ```json
+    {
+      "error": "Categories cannot be found"
+    }
+    ```
+
 ### Example Usage
+
+#### Check API Token
+```bash
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/check_token/
+```
 
 #### Get User Accounts
 ```bash
@@ -291,6 +380,11 @@ curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/ac
 #### Get Transactions for a Date Range
 ```bash
 curl -H "Authorization: Bearer <your-api-token>" "http://localhost:8000/api/v1/transactions/?from=2024-06-01T00:00:00&to=2024-06-30T23:59:59"
+```
+
+#### Get Categories
+```bash
+curl -H "Authorization: Bearer <your-api-token>" "http://localhost:8000/api/v1/categories/?type=spent&user=true"
 ```
 
 ## 📜 License
