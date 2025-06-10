@@ -45,11 +45,22 @@
     </a>
 </div>
 
-<div class="right_div">
+<div class="right_div" style="gap: 1%;">
+    {% if user.is_superuser %}
+    <a onclick="adminRedirect()">
+        <button>Admin</button>
+    </a>
+    {% endif %}
     <a href="{% url 'logout' %}">
         <button>LogOut</button>
     </a>
 </div>
+
+<script>
+function adminRedirect(earningId) {
+    window.location.href = `/admin/`;
+}
+</script>
 
 <script>
 document.getElementById('period').addEventListener('change', function() {

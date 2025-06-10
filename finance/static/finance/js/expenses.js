@@ -1,9 +1,9 @@
 function editExpense(expenseId) {
-    window.location.href = `/api/edit-transaction/${expenseId}/0/`;
+    window.location.href = `/edit-transaction/${expenseId}/0/`;
 }
 
 function editEarning(earningId) {
-    window.location.href = `/api/edit-transaction/${earningId}/1/`;
+    window.location.href = `/edit-transaction/${earningId}/1/`;
 }
 
 function deleteExpense(expenseId) {

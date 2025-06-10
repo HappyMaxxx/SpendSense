@@ -393,6 +393,17 @@ class UserExpenses(LoginRequiredMixin, View):
             transactions = list(earnings)
         else:
             transactions = list(spents) + list(earnings)
+        
+        earn_cats = list(EarnCategory.objects.all()) + \
+            list(UserCategory.objects.filter(user=user, is_spent='earn'))
+        spent_cats = list(SpentCategory.objects.all()) + \
+            list(UserCategory.objects.filter(user=user, is_spent='spent'))
+
+        for transaction in transactions:
+            if isinstance(transaction, Earnings):
+                transaction.category_icon = [cat.icon for cat in earn_cats if str(cat) == transaction.category][0] 
+            elif isinstance(transaction, Spents):
+                transaction.category_icon = [cat.icon for cat in spent_cats if str(cat) == transaction.category][0] 
 
         if sort_by == 'date_asc':
             transactions = sorted(transactions, key=attrgetter('time_update'))
@@ -499,21 +510,20 @@ def edit_transaction(request, transaction_id, transaction_type):
         return render(request, 'finance/404.html', status=404)
 
     if request.method == 'POST':
-        form = TransactionForm(request.POST, instance=transaction)
-        category_value = request.POST.get('category')
+        form = TransactionForm(request.POST, instance=transaction, user=user, request=request)
         date_str = request.POST.get('date')
 
-        if not all([category_value, date_str]):
-            messages.error(request, "Category and date are required.")
+        if not date_str:
+            messages.error(request, "Date is required.")
             return render(request, 'finance/edit_transaction.html', {
                 'form': form,
                 'transaction': transaction,
                 'transaction_id': transaction_id,
                 'transaction_type': transaction_type,
-                'earn_categories': EarnCategory.objects.all(),
-                'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
-                'spent_categories': SpentCategory.objects.all(),
-                'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
+                'earn_categories': list(EarnCategory.objects.all().values('name', 'value', 'icon')) + \
+                    list(UserCategory.objects.filter(user=user, is_spent='earn').values('name', 'value', 'icon')),
+                'spent_categories': list(SpentCategory.objects.all().values('name', 'value', 'icon')) + \
+                    list(UserCategory.objects.filter(user=user, is_spent='spent').values('name', 'value', 'icon'))
             })
 
         try:
@@ -527,39 +537,14 @@ def edit_transaction(request, transaction_id, transaction_type):
                 'transaction': transaction,
                 'transaction_id': transaction_id,
                 'transaction_type': transaction_type,
-                'earn_categories': EarnCategory.objects.all(),
-                'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
-                'spent_categories': SpentCategory.objects.all(),
-                'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
-            })
-
-        try:
-            if transaction_type == 1:
-                try:
-                    category = EarnCategory.objects.get(value=category_value)
-                except EarnCategory.DoesNotExist:
-                    category = UserCategory.objects.get(value=category_value, is_spent='earn', user=user)
-            else:
-                try:
-                    category = SpentCategory.objects.get(value=category_value)
-                except SpentCategory.DoesNotExist:
-                    category = UserCategory.objects.get(value=category_value, is_spent='spent', user=user)
-        except:
-            messages.error(request, "Invalid category selected.")
-            return render(request, 'finance/edit_transaction.html', {
-                'form': form,
-                'transaction': transaction,
-                'transaction_id': transaction_id,
-                'transaction_type': transaction_type,
-                'earn_categories': EarnCategory.objects.all(),
-                'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
-                'spent_categories': SpentCategory.objects.all(),
-                'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
+                'earn_categories': list(EarnCategory.objects.all().values('name', 'value', 'icon')) + \
+                    list(UserCategory.objects.filter(user=user, is_spent='earn').values('name', 'value', 'icon')),
+                'spent_categories': list(SpentCategory.objects.all().values('name', 'value', 'icon')) + \
+                    list(UserCategory.objects.filter(user=user, is_spent='spent').values('name', 'value', 'icon'))
             })
 
         if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.category = category
+            transaction = form.save(commit=False, user=user)
             transaction.time_update = time_update
             transaction.save()
 
@@ -574,18 +559,32 @@ def edit_transaction(request, transaction_id, transaction_type):
 
             return redirect('expenses')
 
+        else:
+            messages.error(request, f"Form is invalid. Errors: {form.errors.as_text()}")
+            return render(request, 'finance/edit_transaction.html', {
+                'form': form,
+                'transaction': transaction,
+                'transaction_id': transaction_id,
+                'transaction_type': transaction_type,
+                'earn_categories': list(EarnCategory.objects.all().values('name', 'value', 'icon')) + \
+                    list(UserCategory.objects.filter(user=user, is_spent='earn').values('name', 'value', 'icon')),
+                'spent_categories': list(SpentCategory.objects.all().values('name', 'value', 'icon')) + \
+                    list(UserCategory.objects.filter(user=user, is_spent='spent').values('name', 'value', 'icon')),
+                'errors': form.errors,
+            })
+
     else:
-        form = TransactionForm(instance=transaction, initial={'transaction_type': 'expense' if transaction_type == 0 else 'income'})
+        form = TransactionForm(instance=transaction, user=user, request=request, initial={'transaction_type': 'expense' if transaction_type == 0 else 'income'})
 
     context = {
         'form': form,
         'transaction': transaction,
         'transaction_id': transaction_id,
         'transaction_type': transaction_type,
-        'earn_categories': EarnCategory.objects.all(),
-        'user_categories_e': UserCategory.objects.filter(user=user, is_spent='earn'),
-        'spent_categories': SpentCategory.objects.all(),
-        'user_categories_s': UserCategory.objects.filter(user=user, is_spent='spent'),
+        'earn_categories': list(EarnCategory.objects.all().values('name', 'value', 'icon')) + \
+            list(UserCategory.objects.filter(user=user, is_spent='earn').values('name', 'value', 'icon')),
+        'spent_categories': list(SpentCategory.objects.all().values('name', 'value', 'icon')) + \
+            list(UserCategory.objects.filter(user=user, is_spent='spent').values('name', 'value', 'icon')),
     }
     return render(request, 'finance/edit_transaction.html', context)
 
@@ -597,10 +596,17 @@ def delete_transaction(request, transaction_id, transaction_type):
         transaction = Spents.objects.filter(id=transaction_id, user=user).first()
     elif transaction_type == 1:
         transaction = Earnings.objects.filter(id=transaction_id, user=user).first()
-    
+
     if not transaction:
         return render(request, 'finance/404.html', status=404)
     
+    account = transaction.account
+    if transaction_type == 0:
+        account.balance = account.balance.to_decimal() + transaction.amount.to_decimal()
+    elif transaction_type == 1:
+        account.balance = account.balance.to_decimal() - transaction.amount.to_decimal()
+
+    account.save()
     transaction.delete()
     return redirect('expenses')
 

@@ -3,7 +3,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from .models import *
-
+from django.contrib import messages
 
 class RegisterUserForm(UserCreationForm):
     username = forms.CharField(label='Username', widget=forms.TextInput(attrs={'id': 'id_username'}))
@@ -43,6 +43,7 @@ class TransactionForm(forms.ModelForm):
         choices=TRANSACTION_TYPES,
         widget=forms.Select
     )
+    category = forms.ChoiceField(choices=[])
 
     class Meta:
         model = Spents
@@ -60,6 +61,23 @@ class TransactionForm(forms.ModelForm):
             'description': False,
         }
 
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None) 
+        self.request = kwargs.pop('request', None)
+        super().__init__(*args, **kwargs)
+        transaction_type = self.data.get('transaction_type') or self.initial.get('transaction_type')
+        if transaction_type == 'income':
+            earn_categories = list(EarnCategory.objects.all().values('value', 'name'))
+            user_earn_categories = list(UserCategory.objects.filter(user=self.user, is_spent='earn').values('value', 'name'))
+            categories = [(cat['value'], cat['name']) for cat in earn_categories + user_earn_categories]
+        else:
+            spent_categories = list(SpentCategory.objects.all().values('value', 'name'))
+            user_spent_categories = list(UserCategory.objects.filter(user=self.user, is_spent='spent').values('value', 'name'))
+            categories = [(cat['value'], cat['name']) for cat in spent_categories + user_spent_categories]
+        self.fields['category'].choices = categories
+        if self.instance and self.instance.pk:
+            self.initial['category'] = self.instance.category
+
     def clean_description(self):
         description = self.cleaned_data.get('description')
         if description and len(description) > 1000:
@@ -72,6 +90,28 @@ class TransactionForm(forms.ModelForm):
             raise forms.ValidationError('Amount must be positive.')
         return amount
 
+    def clean_category(self):
+        category_value = self.cleaned_data.get('category')
+        transaction_type = self.cleaned_data.get('transaction_type')
+        
+        if transaction_type == 'income':
+            try:
+                EarnCategory.objects.get(value=category_value)
+            except EarnCategory.DoesNotExist:
+                try:
+                    UserCategory.objects.get(value=category_value, is_spent='earn', user=self.user)
+                except UserCategory.DoesNotExist:
+                    raise forms.ValidationError('Invalid category selected.')
+        else:
+            try:
+                SpentCategory.objects.get(value=category_value)
+            except SpentCategory.DoesNotExist:
+                try:
+                    UserCategory.objects.get(value=category_value, is_spent='spent', user=self.user)
+                except UserCategory.DoesNotExist:
+                    raise forms.ValidationError('Invalid category selected.')
+        return category_value
+
     def save(self, commit=True, user=None):
         transaction_type = self.cleaned_data.get('transaction_type')
         instance = self.instance
@@ -82,7 +122,7 @@ class TransactionForm(forms.ModelForm):
 
         instance.amount = self.cleaned_data['amount']
         instance.description = self.cleaned_data['description']
-        instance.category = self.cleaned_data['category']
+        instance.category = self.cleaned_data['category']  
         instance.user = user
 
         if commit:

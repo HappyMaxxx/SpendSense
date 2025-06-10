@@ -363,7 +363,7 @@ input[name="email"] {
 
 .expenses-list ul {
     list-style: none;
-    padding-left: 20px;
+    padding-left: 10px;
 }
 
 .expenses-list li {
@@ -626,6 +626,26 @@ button[type="submit"] {
 
 .plus {
     color: green;
+}
+
+.expenses-sum, .earnings-sum {
+    display: inline-block;
+    padding: 0px 5px;
+    border-radius: 15px;
+    font-size: 1rem;
+    color: #fff;
+}
+
+.expenses-sum {
+    background-color: rgb(255, 0, 0, 0.6);
+}
+
+.earnings-sum {
+    background-color: rgb(0, 255, 0, 0.6);
+}
+
+.expenses-sum span, .earnings-sum span {
+    margin: 0;
 }
 
 @media (max-width: 480px) {

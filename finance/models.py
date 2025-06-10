@@ -43,7 +43,7 @@ class EarnCategory(models.Model):
     icon = models.CharField(max_length=4)
 
     def __str__(self):
-        return f'EarnCat {self.icon} {self.name}'
+        return f'{self.value}'
 
 
 class SpentCategory(models.Model):
@@ -52,7 +52,7 @@ class SpentCategory(models.Model):
     icon = models.CharField(max_length=4)
 
     def __str__(self):
-        return f'SpentCat {self.icon} {self.name}'
+        return f'{self.value}'
     
 
 class UserCategory(models.Model):
@@ -69,9 +69,9 @@ class UserCategory(models.Model):
 
     def __str__(self):
         if self.is_spent == 'spent':
-            return f'UserCat {self.icon} {self.name} spent'
+            return f'{self.value}'
         else:
-            return f'UserCat {self.icon} {self.name} earn'
+            return f'{self.value}'
 
 
 class UserProfile(models.Model):

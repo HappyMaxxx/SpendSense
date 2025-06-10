@@ -14,38 +14,59 @@
 </div>
 
 <div class="expenses-list">
-    {% regroup transactions by time_update.date as transactions_by_date %}
+    {% regroup transactions by time_create.date as transactions_by_date %}
     {% for date_group in transactions_by_date %}
         {% sum_amount date_group.list as summa %}
-            
-        <h3 class="expense-h3">
-            {{ date_group.grouper|date:"d.m.Y" }}
-            {% if summa == 0 %}
-                <span class="zero">{{ summa }}₴</span>
-            {% elif summa > 0 %} 
-                <span class="profit">+{{ summa }}₴</span>
-            {% else %}
-                <span class="loss">{{ summa }}₴</span>
-            {% endif %}
+        {% sum_expenses date_group.list as expenses %}
+        {% sum_earnings date_group.list as earnings %}
+
+        <h3 class="expense-h3" style="display: flex; justify-content: space-between;">
+            <span>{{ date_group.grouper|date:"d.m.Y" }}</span>
+            <!-- <span class="total-sum">
+                Total: 
+                {% if summa == 0 %}
+                    <span class="zero">{{ summa }}₴</span>
+                {% elif summa > 0 %} 
+                    <span class="profit">+{{ summa }}₴</span>
+                {% else %}
+                    <span class="loss">{{ summa }}₴</span>
+                {% endif %}
+            </span> -->
+            <div class="ear-spent-data">
+                {% if not earnings == 0 %}
+                    <span class="earnings-sum">
+                            <span>{{ earnings }}₴</span>
+                    </span>
+                {% endif %}
+                {% if not expenses == 0 %}
+                    <span class="expenses-sum">
+                            <span>{{ expenses }}₴</span>
+                    </span>
+                {% endif %}
+            </div>
         </h3>
         <ul>
             {% for expense in date_group.list %}
-                <li class="expens_elem">
-                    {{ expense.time_update|date:"H:i" }} {% if expense.description %} - {% endif %} {{ expense.description }}:
-                    {% if expense|is_spent %}-{% else %}+{% endif %}{{ expense.amount }}₴
+                <li class="expens_elem" style="display: flex; align-items: center; gap: 2%;">
+                    <span style="font-size: 1.5em;">{{ expense.category_icon }}</span>
+                    <span>{{ expense.account.name }}</span>
+                    <span>
+                        {% if expense.description %} - {% endif %} {{ expense.description }}
+                        {% if expense|is_spent %}-{% else %}+{% endif %}{{ expense.amount }}₴
+                    </span>
                     <div class="expense-actions">
-                        {% if not expense|is_spent %}
-                            <button onclick="editEarning('{{ expense.id }}')" title="Edit">
-                                <i class="fa-solid fa-pencil"></i>
-                            </button>
-                            <button onclick="deleteEarning('{{ expense.id }}')" title="Delete">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        {% else %}
+                        {% if expense|is_spent %}
                             <button onclick="editExpense('{{ expense.id }}')" title="Edit">
                                 <i class="fa-solid fa-pencil"></i>
                             </button>
                             <button onclick="deleteExpense('{{ expense.id }}')" title="Delete">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        {% else %}
+                            <button onclick="editEarning('{{ expense.id }}')" title="Edit">
+                                <i class="fa-solid fa-pencil"></i>
+                            </button>
+                            <button onclick="deleteEarning('{{ expense.id }}')" title="Delete">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         {% endif %}
