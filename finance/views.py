@@ -16,13 +16,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import AccessMixin
 from django.views import View
 from django.views.generic import CreateView
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.models import User
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import login, logout
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 
 from operator import attrgetter
 import json

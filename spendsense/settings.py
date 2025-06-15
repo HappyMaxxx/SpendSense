@@ -23,6 +23,8 @@ INSTALLED_APPS = [
     'debug_toolbar',
     'finance.apps.FinanceConfig',
     'mono.apps.MonoConfig',
+    'api.apps.ApiConfig',
+    'stats.apps.StatsConfig'
 ]
 
 MIDDLEWARE = [

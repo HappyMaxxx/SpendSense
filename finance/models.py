@@ -37,6 +37,7 @@ class Earnings(models.Model):
     def __str__(self):
         return f"Earn: {self.amount} - {self.category}"
     
+    
 class EarnCategory(models.Model):
     name =  models.CharField(max_length=100)
     value = models.CharField(max_length=100)

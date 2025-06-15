@@ -34,7 +34,7 @@
                 {% endif %}
             </a></li>
             <li><a href="{% url 'expenses' %}">Expenses</a></li>
-            <li><a>Reports</a></li>
+            <li><a href="{% url 'reports' %}">Reports</a></li>
             {% if user.is_authenticated %}
                 <li><a href="{% url 'profile' %}">Profile</a></li>
             {% else %}

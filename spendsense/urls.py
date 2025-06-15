@@ -10,6 +10,7 @@ from django.views.static import serve
 urlpatterns = [
 	path('admin/', admin.site.urls),
 	path('', include('finance.urls')),
+    path('', include('stats.urls')),
     path('', include('mono.urls')),
     path('', include('api.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -1,6 +1,4 @@
 from django.urls import path
-from django.conf import settings
-from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
@@ -16,6 +14,7 @@ urlpatterns = [
          name='edit_transaction'),
     # API endpoints
     path('api/check_username/', views.check_username, name='check_username'),
-    path('api/delete-transaction/<int:transaction_id>/<int:transaction_type>/', views.delete_transaction, name='delete_transaction'),
+    path('api/delete-transaction/<int:transaction_id>/<int:transaction_type>/',
+         views.delete_transaction, name='delete_transaction'),
     path('api/delete-api-token/', views.delete_api_token, name='unlink_api'),
 ]
