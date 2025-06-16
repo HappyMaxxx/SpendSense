@@ -2,13 +2,55 @@
 {% load static %}
 
 {% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<h1>The page is still under development</h1>
 
-<div class="center_div">
-    <a href="{% url 'home' %}">
-        <button>Back to Home</button>
-    </a>
+<div class="center_div" style="margin-bottom: 1rem;">
+    <label for="period-select">Select the period: </label>
+    <select id="period-select">
+        <option value="month">Last month</option>
+        <option value="30days">Last 30 days</option>
+        <option value="year">The last year</option>
+    </select>
 </div>
 
+<!-- Графік -->
+<div class="center_div">
+    <canvas id="myChart" style="max-width: 400px; max-height: 400px;"></canvas>
+</div>
+
+<script>
+    const ctx = document.getElementById('myChart').getContext('2d');
+    let myChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'Expenses ₴',
+                data: [],
+                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#2ecc71', '#f39c12'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+
+    function updateChart(period) {
+        fetch(`/chart-data/?period=${period}`)
+            .then(response => response.json())
+            .then(data => {
+                myChart.data.labels = data.labels;
+                myChart.data.datasets[0].data = data.data;
+                myChart.update();
+            });
+    }
+
+    updateChart('month');
+
+    document.getElementById('period-select').addEventListener('change', function () {
+        updateChart(this.value);
+    });
+</script>
 {% endblock %}
