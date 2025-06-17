@@ -3,30 +3,40 @@
 
 {% block content %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 
 <div class="center_div" style="margin-bottom: 1rem;">
     <label for="period-select">Select the period: </label>
     <select id="period-select">
-        <option value="month">Last month</option>
+        <option value="week">Last week</option>
+        <option value="month" selected>Last month</option>
         <option value="30days">Last 30 days</option>
         <option value="year">The last year</option>
     </select>
 </div>
 
+<div class="center_div" id="no-data-message" style="display: none; color: red;">
+    No transactions for the selected period
+</div>
+
 <!-- Графік -->
 <div class="center_div">
-    <canvas id="myChart" style="max-width: 400px; max-height: 400px;"></canvas>
+    <canvas id="pieChart" style="max-width: 400px; max-height: 400px;"></canvas>
+</div>
+
+<div class="center_div">
+    <canvas id="barChart" style="max-width: 400px; max-height: 400px;"></canvas>
 </div>
 
 <script>
-    const ctx = document.getElementById('myChart').getContext('2d');
-    let myChart = new Chart(ctx, {
+    const ctx = document.getElementById('pieChart').getContext('2d');
+    const cty = document.getElementById('barChart').getContext('2d');
+
+    let pieChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: [],
             datasets: [{
-                label: 'Expenses ₴',
                 data: [],
                 backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#2ecc71', '#f39c12'],
                 borderWidth: 1
@@ -36,16 +46,53 @@
             responsive: true
         }
     });
+    let barChart = new Chart(cty, {
+        type: 'bar',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#2ecc71', '#f39c12'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: { title: { display: true, text: 'Category' } },
+                y: { title: { display: true, text: 'Costs ₴' } }
+            }
+        }
+    });
 
     function updateChart(period) {
-        fetch(`/chart-data/?period=${period}`)
-            .then(response => response.json())
-            .then(data => {
-                myChart.data.labels = data.labels;
-                myChart.data.datasets[0].data = data.data;
-                myChart.update();
-            });
-    }
+    const noDataMessage = document.getElementById('no-data-message');
+    fetch(`/chart-data/?period=${period}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            if (!data.labels || !data.data || data.labels.length === 0) {
+                noDataMessage.style.display = 'flex';
+                pieChart.data.labels = [];
+                pieChart.data.datasets[0].data = [];
+                barChart.data.labels = [];
+                barChart.data.datasets[0].data = [];
+            } else {
+                noDataMessage.style.display = 'none';
+                pieChart.data.labels = data.labels;
+                pieChart.data.datasets[0].data = data.data;
+                barChart.data.labels = data.labels;
+                barChart.data.datasets[0].data = data.data;
+            }
+            pieChart.update();
+            barChart.update();
+        });
+}
 
     updateChart('month');
 

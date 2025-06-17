@@ -19,6 +19,8 @@ def chart_data(request):
         date_from = now - timedelta(days=30)
     elif period == 'year':
         date_from = now - timedelta(days=365)
+    elif period == 'week':
+        date_from = now - timedelta(days=7)
     else:  # month
         date_from = now.replace(day=1)
 
