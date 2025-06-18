@@ -1,5 +1,6 @@
 from pathlib import Path
 from decouple import config
+import dj_database_url
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,6 +22,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
+    'encrypted_model_fields',
     'finance.apps.FinanceConfig',
     'mono.apps.MonoConfig',
     'api.apps.ApiConfig',
@@ -63,16 +65,10 @@ WSGI_APPLICATION = 'spendsense.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'finance_tracker',
-        'ENFORCE_SCHEMA': True,
-        'CLIENT': {
-            'host': os.getenv('DATABASE_URL', 'mongodb://localhost:27017/finance_tracker'),
-        }
-    }
-}
+DATABASE_URL = 'postgresql://postgres:postgres@db:5432/app_db'
+if not DATABASE_URL:
+    raise ValueError("DATABASE_URL is not set")
+DATABASES = {'default': dj_database_url.parse(DATABASE_URL)}
 
 CELERY_BROKER_URL = 'redis://redis:6379/0'
 CELERY_BROKER_TRANSPORT_OPTIONS = {'visibility_timeout': 3600}
@@ -125,4 +121,4 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-FERNET_KEY = config('FERNET_KEY')
+FIELD_ENCRYPTION_KEY = config('FERNET_KEY')

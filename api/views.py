@@ -53,7 +53,7 @@ def api_user_accounts(request):
             'accounts': [
                 {
                     'account': account.name,
-                    'balance': account.balance.to_decimal(),
+                    'balance': account.balance,
                 }
                 for account in accounts
             ]
@@ -105,7 +105,7 @@ def api_user_transactions(request):
             'transactions': [
                 {   
                     'type': 'spent' if str(transaction).startswith("Trans") else 'earn',
-                    'amount': transaction.amount.to_decimal(),
+                    'amount': transaction.amount,
                     'category': transaction.category,
                     'description': transaction.description,
                     'account': transaction.account.name,

@@ -7,13 +7,20 @@ services:
       - db
       # - redis
     environment:
-      - DATABASE_URL=mongodb://db:27017/finance_tracker
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/app_db
+      
+    command: ["./wait-for-it.sh", "db:5432", "--", "python3", "manage.py", "runserver", "0.0.0.0:8000"]
   db:
-    image: mongo:latest
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
   # redis:
   #   image: redis:latest
   #   ports:
@@ -25,7 +32,7 @@ services:
   #     - redis
   #     - db
   #   environment:
-  #     - DATABASE_URL=mongodb://db:27017/finance_tracker
+  #     - DATABASE_URL=postgresql://postgres:postgres@db:5432/app_db
   # flower:
   #   image: mher/flower
   #   environment:
@@ -35,4 +42,4 @@ services:
   #   depends_on:
   #     - redis
 volumes:
-  mongo_data:
+  postgres_data:

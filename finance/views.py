@@ -88,7 +88,7 @@ class HomeView(View):
             return render(request, 'finance/index.html')
         
         user_accs = Account.objects.filter(user=request.user)
-        total_balance = sum(acc.balance.to_decimal() for acc in user_accs) \
+        total_balance = sum(acc.balance for acc in user_accs) \
             if user_accs else 0
 
         earn_categories = EarnCategory.objects.all()
@@ -177,7 +177,7 @@ class HomeView(View):
                     user=request.user
                 )
 
-                account.balance = Decimal(str(account.balance.to_decimal())) + Decimal(str(amount))
+                account.balance = Decimal(str(account.balance)) + Decimal(str(amount))
                 account.save()
 
                 return redirect('home')
@@ -237,7 +237,7 @@ class HomeView(View):
                     user=request.user
                 )
 
-                account.balance = Decimal(str(account.balance.to_decimal())) - Decimal(str(amount))
+                account.balance = Decimal(str(account.balance)) - Decimal(str(amount))
                 account.save()
 
                 return redirect('home')
@@ -324,11 +324,11 @@ class UserProfileView(LoginRequiredMixin, View):
         spents = [s for s in all_spents if start_date <= s.time_create <= end_date]
         earnings = [e for e in all_earnings if start_date <= e.time_create <= end_date]
 
-        total_spending = sum(transaction.amount.to_decimal() for transaction in spents) if spents else 0
-        total_earning = sum(transaction.amount.to_decimal() for transaction in earnings) if earnings else 0
+        total_spending = sum(transaction.amount for transaction in spents) if spents else 0
+        total_earning = sum(transaction.amount for transaction in earnings) if earnings else 0
 
-        total_all_spending = sum(transaction.amount.to_decimal() for transaction in all_spents) if all_spents else 0
-        total_all_earning = sum(transaction.amount.to_decimal() for transaction in all_earnings) if all_earnings else 0
+        total_all_spending = sum(transaction.amount for transaction in all_spents) if all_spents else 0
+        total_all_earning = sum(transaction.amount for transaction in all_earnings) if all_earnings else 0
 
         total_all_diff = total_all_earning - total_all_spending
 
@@ -337,11 +337,11 @@ class UserProfileView(LoginRequiredMixin, View):
                 'total_spending': float(total_spending),  
                 'total_earning': float(total_earning),   
                 'spents': [
-                    {'id': s.id, 'amount': float(s.amount.to_decimal()), 'time_create': s.time_create.isoformat()}
+                    {'id': s.id, 'amount': float(s.amount), 'time_create': s.time_create.isoformat()}
                     for s in spents
                 ], 
                 'earnings': [
-                    {'id': e.id, 'amount': float(e.amount.to_decimal()), 'time_create': e.time_create.isoformat()}
+                    {'id': e.id, 'amount': float(e.amount), 'time_create': e.time_create.isoformat()}
                     for e in earnings
                 ], 
             })
@@ -405,14 +405,14 @@ class UserExpenses(LoginRequiredMixin, View):
         if sort_by == 'date_asc':
             transactions = sorted(transactions, key=attrgetter('time_update'))
         elif sort_by == 'amount_desc':
-            transactions = sorted(transactions, key=lambda x: x.amount.to_decimal(), reverse=True)
+            transactions = sorted(transactions, key=lambda x: x.amount, reverse=True)
         elif sort_by == 'amount_asc':
-            transactions = sorted(transactions, key=lambda x: x.amount.to_decimal())
+            transactions = sorted(transactions, key=lambda x: x.amount)
         else:
             transactions = sorted(transactions, key=attrgetter('time_update'), reverse=True)
 
-        total_expenses = sum(spent.amount.to_decimal() for spent in spents)
-        total_earnings = sum(earning.amount.to_decimal() for earning in earnings)
+        total_expenses = sum(spent.amount for spent in spents)
+        total_earnings = sum(earning.amount for earning in earnings)
         profit = total_earnings - total_expenses
 
         context = {
@@ -472,8 +472,7 @@ def edit_transaction(request, transaction_id, transaction_type):
     elif transaction_type == 1:
         transaction = Earnings.objects.filter(id=transaction_id, user=user).first()
 
-    trans_amount = transaction.amount.to_decimal()
-
+    trans_amount = transaction.amount
     if not transaction:
         return render(request, 'finance/404.html', status=404)
 
@@ -517,7 +516,7 @@ def edit_transaction(request, transaction_id, transaction_type):
             transaction.save()
 
             acc = transaction.account
-            acc_bal = acc.balance.to_decimal()
+            acc_bal = acc.balance
             new_amount = form.cleaned_data['amount']
             if transaction_type == 1:
                 acc.balance = acc_bal - trans_amount + new_amount
@@ -582,9 +581,9 @@ def delete_transaction(request, transaction_id, transaction_type):
     
     account = transaction.account
     if transaction_type == 0:
-        account.balance = account.balance.to_decimal() + transaction.amount.to_decimal()
+        account.balance = account.balance + transaction.amount
     elif transaction_type == 1:
-        account.balance = account.balance.to_decimal() - transaction.amount.to_decimal()
+        account.balance = account.balance - transaction.amount
 
     account.save()
     transaction.delete()
