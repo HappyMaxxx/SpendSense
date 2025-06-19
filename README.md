@@ -1,13 +1,13 @@
 # SpendSense 💰
 
-**SpendSense** is a web application for budget and expense tracking, built with Django and powered by MongoDB and Redis. It uses Docker for easy setup and deployment, making it simple to manage your finances.
+**SpendSense** is a web application for budget and expense tracking, built with Django and powered by PostgreSQL and Redis. It uses Docker for easy setup and deployment, making it simple to manage your finances.
 
 ## ✨ Features
 
 - Track income and expenses
 - Categorize transactions
 - View budget summaries and insights
-- MongoDB for data storage
+- PostgreSQL for data storage (previously used MongoDB)
 - Redis for caching and performance
 - Celery for asynchronous task processing
 - Flower for monitoring Celery tasks
@@ -45,6 +45,10 @@ Create a `.env` file in the project root and add the following:
 DJANGO_SECRET_KEY=your-secret-key-here
 DEBUG=False
 ALLOWED_HOSTS=localhost,127.0.0.1
+
+POSTGRES_DB=app_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
 ```
 
 > **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g., using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
@@ -61,7 +65,7 @@ python manage.py collectstatic # for Windows
 
 ### 4. Build and Run with Docker
 
-Build the Docker images and start the Django, MongoDB, Redis, Celery, and Flower containers:
+Build the Docker images and start the Django, PostgreSQL, Redis, Celery, and Flower containers:
 
 ```bash
 docker-compose up --build
@@ -84,15 +88,15 @@ docker-compose down
 
 ### Remove Containers and Volumes
 
-To stop containers and remove them along with the MongoDB data volume:
+To stop containers and remove them along with the PostgreSQL data volume:
 
 ```bash
 docker-compose down -v
 ```
 
-> **Warning**: The `-v` flag deletes the MongoDB database volume, resulting in data loss. Use with caution.
+> **Warning**: The `-v` flag deletes the PostgreSQL database volume, resulting in data loss. Use with caution.
 
-> **Important**: After removing the MongoDB volume, the Django superuser account will be deleted. Create a new superuser by running:
+> **Important**: After removing the PostgreSQL volume, the Django superuser account will be deleted. Create a new superuser by running:
 > ```bash
 > docker-compose run web python manage.py createsuperuser
 > ```
@@ -103,9 +107,9 @@ docker-compose down -v
 The `docker-compose.yml` defines five services:
 
 - **web**: The Django application, built from the project directory, exposed on port `8000`.
-- **db**: MongoDB, using the `mongo:latest` image, with data persisted in the `mongo_data` volume, exposed on port `27017`.
+- **db**: PostgreSQL, using the `postgres:15` image, with data persisted in the postgres_data volume, exposed on port `5432`.
 - **redis**: Redis, using the `redis:latest` image, exposed on port `6379`.
-- **celery**: Celery worker for asynchronous task processing, built from the project directory, dependent on Redis and MongoDB.
+- **celery**: Celery worker for asynchronous task processing, built from the project directory, dependent on Redis and PostgreSQL.
 - **flower**: Flower dashboard for monitoring Celery tasks, using the `mher/flower` image, exposed on port `5555`.
 
 ```yaml
@@ -118,13 +122,20 @@ services:
       - db
       - redis
     environment:
-      - DATABASE_URL=mongodb://db:27017/finance_tracker
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/app_db
+      
+    command: ["./wait-for-it.sh", "db:5432", "--", "python3", "manage.py", "runserver", "0.0.0.0:8000"]
   db:
-    image: mongo:latest
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "27017:27017"
+      - "5432:5432"
     volumes:
-      - mongo_data:/data/db
+      - postgres_data:/var/lib/postgresql/data
   redis:
     image: redis:latest
     ports:
@@ -136,7 +147,7 @@ services:
       - redis
       - db
     environment:
-      - DATABASE_URL=mongodb://db:27017/finance_tracker
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/app_db
   flower:
     image: mher/flower
     environment:
@@ -146,7 +157,7 @@ services:
     depends_on:
       - redis
 volumes:
-  mongo_data:
+  postgres_data:
 ```
 
 > **Important**: redis, celery and flower services are currently temporarily commented out, as they are not yet in use
@@ -154,7 +165,7 @@ volumes:
 ## 🔧 Troubleshooting
 
 - **Port conflicts**: Ensure ports `8000`, `27017`, `6379`, and `5555` are free. Check with `sudo netstat -tuln | grep <port>`.
-- **MongoDB connection issues**: Verify the `DATABASE_URL` in the `.env` file matches the MongoDB service name (`db`) and database name (`finance_tracker`).
+- **PostgreSQL connection issues**: Verify the `DATABASE_URL` in the `.env` file matches the PostgreSQL service name (`db`) and database name (`finance_tracker`).
 - **Celery issues**: Ensure the `CELERY_BROKER_URL` in the `.env` file is set to `redis://redis:6379/0`.
 - **Docker permissions**: On Linux, if you encounter permission errors, add your user to the Docker group: `sudo usermod -aG docker $USER`.
 
