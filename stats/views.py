@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 from finance.views import LoginRequiredMixin
 from finance.models import Spents, Earnings
+from .models import WeekAmount
 from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.db.models import Sum
@@ -29,7 +31,7 @@ def chart_data(request):
     category_totals = {}
     for item in spents:
         category = item['category']
-        amount = item['amount'].to_decimal()
+        amount = item['amount']
         if category in category_totals:
             category_totals[category] += amount
         else:
@@ -39,3 +41,22 @@ def chart_data(request):
     data = list(category_totals.values())
 
     return JsonResponse({'labels': labels, 'data': data})
+
+def fetch_weekly_amount_data(user):
+    today = timezone.now().date()
+    start_of_this_week = today - timedelta(days=today.weekday())
+    start_of_last_week = start_of_this_week - timedelta(days=7)
+
+    daily_sums = []
+
+    for i in range(7):
+        day_date = start_of_last_week + timedelta(days=i)
+        
+        total = Spents.objects.filter(
+            user=user,
+            time_create__date=day_date
+        ).aggregate(total=Sum('amount'))['total'] or 0
+
+        daily_sums.append(float(total))
+
+    return daily_sums

@@ -75,17 +75,18 @@
     fetch(`/chart-data/?period=${period}`)
         .then(response => response.json())
         .then(data => {
-            console.log(data);
             if (!data.labels || !data.data || data.labels.length === 0) {
                 noDataMessage.style.display = 'flex';
                 pieChart.data.labels = [];
                 pieChart.data.datasets[0].data = [];
+                document.getElementById('barChart').style.display = 'none';
                 barChart.data.labels = [];
                 barChart.data.datasets[0].data = [];
             } else {
                 noDataMessage.style.display = 'none';
                 pieChart.data.labels = data.labels;
                 pieChart.data.datasets[0].data = data.data;
+                document.getElementById('barChart').style.display = 'block';
                 barChart.data.labels = data.labels;
                 barChart.data.datasets[0].data = data.data;
             }
