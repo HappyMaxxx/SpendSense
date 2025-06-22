@@ -28,9 +28,31 @@
     <canvas id="barChart" style="max-width: 400px; max-height: 400px;"></canvas>
 </div>
 
+<div class="center_div">
+    <canvas id="weeklyBarChart" style="max-width: 700px; max-height: 400px;"></canvas>
+</div>
+
+
 <script>
     const ctx = document.getElementById('pieChart').getContext('2d');
     const cty = document.getElementById('barChart').getContext('2d');
+    const weeklyCtx = document.getElementById('weeklyBarChart').getContext('2d');
+    const chartColors = [
+        '#ff6384', // Red
+        '#36a2eb', // Blue
+        '#cc65fe', // Purple
+        '#ffce56', // Yellow
+        '#2ecc71', // Green
+        '#f39c12', // Orange
+        '#e74c3c', // Dark Red
+        '#3498db', // Dark Blue
+        '#9b59b6', // Dark Purple
+        '#f1c40f', // Dark Yellow
+        '#27ae60', // Dark Green
+        '#e67e22', // Dark Orange
+        '#1abc9c', // Teal
+        '#ecf0f1', // Light Gray
+    ];
 
     let pieChart = new Chart(ctx, {
         type: 'pie',
@@ -38,21 +60,27 @@
             labels: [],
             datasets: [{
                 data: [],
-                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#2ecc71', '#f39c12'],
+                backgroundColor: chartColors,
                 borderWidth: 1
             }]
         },
         options: {
-            responsive: true
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
         }
     });
+
     let barChart = new Chart(cty, {
         type: 'bar',
         data: {
             labels: [],
             datasets: [{
                 data: [],
-                backgroundColor: ['#ff6384', '#36a2eb', '#cc65fe', '#ffce56', '#2ecc71', '#f39c12'],
+                backgroundColor: chartColors,
                 borderWidth: 1
             }]
         },
@@ -64,8 +92,46 @@
                 }
             },
             scales: {
-                x: { title: { display: true, text: 'Category' } },
-                y: { title: { display: true, text: 'Costs ₴' } }
+            x: {
+                title: { display: true, text: 'Category' },
+                ticks: { display: false }
+            },
+            y: { title: { display: true, text: 'Costs ₴' } }
+        }
+        }
+    });
+
+    let weeklyBarChart = new Chart(weeklyCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            datasets: [
+                {
+                    label: 'This Week',
+                    data: [],
+                    backgroundColor: '#36a2eb'
+                },
+                {
+                    label: 'Average',
+                    data: [],
+                    backgroundColor: '#ffce56'
+                },
+                {
+                    type: 'line',
+                    label: 'Weekly Average',
+                    data: [],
+                    borderColor: '#ff6384',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: { title: { display: true, text: 'Days of Week' } },
+                y: { title: { display: true, text: 'Expense Amount ₴' } }
             }
         }
     });
@@ -77,6 +143,7 @@
         .then(data => {
             if (!data.labels || !data.data || data.labels.length === 0) {
                 noDataMessage.style.display = 'flex';
+                document.getElementById('pieChart').style.display = 'none';
                 pieChart.data.labels = [];
                 pieChart.data.datasets[0].data = [];
                 document.getElementById('barChart').style.display = 'none';
@@ -84,6 +151,7 @@
                 barChart.data.datasets[0].data = [];
             } else {
                 noDataMessage.style.display = 'none';
+                document.getElementById('pieChart').style.display = 'block';
                 pieChart.data.labels = data.labels;
                 pieChart.data.datasets[0].data = data.data;
                 document.getElementById('barChart').style.display = 'block';
@@ -100,5 +168,24 @@
     document.getElementById('period-select').addEventListener('change', function () {
         updateChart(this.value);
     });
+
+    function loadWeeklyChart() {
+        fetch('/weekly-chart-data/')
+            .then(response => response.json())
+            .then(data => {
+                const avgWeek = data.average_week;
+                const currentWeek = data.current_week;
+                const weekAvg = (
+                    currentWeek.reduce((sum, val) => sum + val, 0) / currentWeek.length
+                ).toFixed(2);
+
+                weeklyBarChart.data.datasets[0].data = currentWeek;
+                weeklyBarChart.data.datasets[1].data = avgWeek;
+                weeklyBarChart.data.datasets[2].data = new Array(7).fill(weekAvg);
+                weeklyBarChart.update();
+            });
+    }
+
+    loadWeeklyChart();
 </script>
 {% endblock %}

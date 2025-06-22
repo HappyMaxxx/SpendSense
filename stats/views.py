@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from django.http import JsonResponse
 from django.db.models import Sum
 from django.contrib import messages
+import json
 
 @login_required
 def reports_view(request):
@@ -48,15 +49,31 @@ def fetch_weekly_amount_data(user):
     start_of_last_week = start_of_this_week - timedelta(days=7)
 
     daily_sums = []
-
     for i in range(7):
-        day_date = start_of_last_week + timedelta(days=i)
+        day_date = start_of_this_week + timedelta(days=i)
         
         total = Spents.objects.filter(
             user=user,
             time_create__date=day_date
         ).aggregate(total=Sum('amount'))['total'] or 0
-
         daily_sums.append(float(total))
 
     return daily_sums
+
+@login_required
+def weekly_chart_data(request):
+    current_week_data = fetch_weekly_amount_data(request.user)
+    
+    week_amount, created = WeekAmount.objects.get_or_create(
+        user=request.user,
+        defaults={'data': json.dumps([0] * 7)}
+    )
+    
+    updated = week_amount.update_data(fetch_weekly_amount_data)
+    
+    average_week_data = week_amount.get_data()
+    
+    return JsonResponse({
+        'current_week': current_week_data,
+        'average_week': average_week_data
+    })

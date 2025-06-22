@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib import messages
 import json
 
 class WeekAmount(models.Model):
@@ -12,6 +13,7 @@ class WeekAmount(models.Model):
 
     def set_data(self, value):
         self.data = json.dumps(value)
+        self.save()
 
     def get_data(self):
         return json.loads(self.data)
@@ -20,7 +22,7 @@ class WeekAmount(models.Model):
         now = timezone.now()
         start_of_this_week = now - timedelta(days=now.weekday())
 
-        if self.last_update < start_of_this_week:
+        if (self.last_update < start_of_this_week) or self.last_update is None:
             new_data = func(self.user)
 
             try:
@@ -40,3 +42,6 @@ class WeekAmount(models.Model):
             self.last_update = now
             self.times_update += 1
             self.save()
+            
+            return True
+        return False 
