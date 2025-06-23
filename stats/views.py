@@ -43,21 +43,22 @@ def chart_data(request):
 
     return JsonResponse({'labels': labels, 'data': data})
 
-def fetch_weekly_amount_data(user):
-    today = timezone.now().date()
-    start_of_this_week = today - timedelta(days=today.weekday())
-    start_of_last_week = start_of_this_week - timedelta(days=7)
+def fetch_weekly_amount_data(user, start_date=None, end_date=None):
+    if start_date is None:
+        today = timezone.now().date()
+        start_date = today - timedelta(days=today.weekday())
+        end_date = start_date + timedelta(days=6)
 
     daily_sums = []
     for i in range(7):
-        day_date = start_of_this_week + timedelta(days=i)
+        day_date = start_date + timedelta(days=i)
         
         total = Spents.objects.filter(
             user=user,
             time_create__date=day_date
         ).aggregate(total=Sum('amount'))['total'] or 0
         daily_sums.append(float(total))
-
+    
     return daily_sums
 
 @login_required

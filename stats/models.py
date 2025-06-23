@@ -16,32 +16,35 @@ class WeekAmount(models.Model):
         self.save()
 
     def get_data(self):
-        return json.loads(self.data)
+        if self.data:
+            return json.loads(self.data)
+        return [0] * 7
     
     def update_data(self, func):
-        now = timezone.now()
+        now = timezone.now().date()
         start_of_this_week = now - timedelta(days=now.weekday())
+        start_of_last_week = start_of_this_week - timedelta(days=7)
+        end_of_last_week = start_of_this_week - timedelta(seconds=1)
 
-        if (self.last_update < start_of_this_week) or self.last_update is None:
-            new_data = func(self.user)
+        last_update_date = self.last_update.date() if self.last_update else None
+
+        if last_update_date is None or last_update_date < start_of_this_week:
+            new_data = func(self.user, start_of_last_week, end_of_last_week)
 
             try:
                 existing_data = self.get_data()
             except json.JSONDecodeError:
                 existing_data = [0] * 7
 
-            if len(existing_data) != 7:
-                existing_data = [0] * 7
-
             updated_data = []
             for old, new in zip(existing_data, new_data):
                 avg = (old * self.times_update + new) / (self.times_update + 1)
-                updated_data.append(round(avg, 2)) 
+                updated_data.append(int(avg))
 
             self.set_data(updated_data)
-            self.last_update = now
+            self.last_update = timezone.now()
             self.times_update += 1
             self.save()
             
             return True
-        return False 
+        return False
