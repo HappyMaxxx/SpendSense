@@ -21,6 +21,16 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  bot:
+    build: .
+    command: python3 bot/main.py
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/app_db
+
   # redis:
   #   image: redis:latest
   #   ports:
