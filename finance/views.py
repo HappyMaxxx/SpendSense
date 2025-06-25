@@ -25,6 +25,7 @@ from operator import attrgetter
 import json
 import secrets
 from decimal import Decimal
+from decouple import config
 from .tasks import test_task
 
 
@@ -554,6 +555,27 @@ def edit_transaction(request, transaction_id, transaction_type):
             list(UserCategory.objects.filter(user=user, is_spent='spent').values('name', 'value', 'icon')),
     }
     return render(request, 'finance/edit_transaction.html', context)
+
+def bot_redirect(request):
+    try:
+        bot_url = config('BOT_URL')
+    except:
+        bot_url = None
+
+    if bot_url:
+        user_profile = UserProfile.objects.get(user=request.user)
+        try:
+            unique_code = user_profile.api_key
+        except:
+            unique_code = None
+
+        if unique_code is not None:
+            bot_link = f"{bot_url}?start={unique_code}"
+        else:
+            bot_link = f"{bot_url}"
+            
+        return redirect(bot_link)
+    return redirect('profile')
 
 # API
 
