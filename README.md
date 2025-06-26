@@ -7,6 +7,7 @@
 - Track income and expenses
 - Categorize transactions
 - View budget summaries and insights
+- Telegram bot for managing transactions and viewing account details (optional, for enhanced interaction)
 - PostgreSQL for data storage (previously used MongoDB)
 - Redis for caching and performance
 - Celery for asynchronous task processing
@@ -49,10 +50,15 @@ ALLOWED_HOSTS=localhost,127.0.0.1
 POSTGRES_DB=app_db
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
+
+BOT_TOKEN=your-telegram-bot-token-here
+BOT_URL='https://t.me/your-bot-name'
 ```
 
-> **Note**: Generate a secure `DJANGO_SECRET_KEY` (e.g., using `python -c "import secrets; print(secrets.token_hex(32))"`). Optionally, add your local network IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
-
+> **Note**: 
+> - Generate a secure `DJANGO_SECRET_KEY` (e.g., using `python -c "import secrets; print(secrets.token_hex(32))"`).
+> - The `TELEGRAM_BOT_TOKEN` is optional and only required if you want to use the Telegram bot. Obtain it by creating a bot via [BotFather](https://t.me/BotFather) on Telegram.
+> - Optionally, add your local network IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
 ### 3. Collect Static Files
 
 Prepare static assets for production:
@@ -74,7 +80,10 @@ docker-compose up --build
 > **Note**: On Linux, you may need `sudo` depending on your Docker setup. On Windows, use Docker Desktop and run the command in PowerShell or CMD.
 
 The application will be available at: [http://localhost:8000](http://localhost:8000).
+
 The Flower dashboard for monitoring Celery tasks will be available at: [http://localhost:5555](http://localhost:5555).
+
+The Telegram bot, if enabled, can be interacted with via Telegram after starting the bot with the provided token.
 
 ## 🛑 Stopping and Cleaning Up
 
@@ -108,6 +117,7 @@ The `docker-compose.yml` defines five services:
 
 - **web**: The Django application, built from the project directory, exposed on port `8000`.
 - **db**: PostgreSQL, using the `postgres:15` image, with data persisted in the postgres_data volume, exposed on port `5432`.
+- **bot**: The Telegram bot (optional), built from the project directory, running `bot/main.py`, dependent on PostgreSQL, with access to the project directory via a volume. This service only runs if `TELEGRAM_BOT_TOKEN` is provided.
 - **redis**: Redis, using the `redis:latest` image, exposed on port `6379`.
 - **celery**: Celery worker for asynchronous task processing, built from the project directory, dependent on Redis and PostgreSQL.
 - **flower**: Flower dashboard for monitoring Celery tasks, using the `mher/flower` image, exposed on port `5555`.
@@ -136,6 +146,15 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  bot:
+    build: .
+    command: python3 bot/main.py
+    volumes:
+      - .:/app
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/app_db
   redis:
     image: redis:latest
     ports:
@@ -166,6 +185,7 @@ volumes:
 
 - **Port conflicts**: Ensure ports `8000`, `27017`, `6379`, and `5555` are free. Check with `sudo netstat -tuln | grep <port>`.
 - **PostgreSQL connection issues**: Verify the `DATABASE_URL` in the `.env` file matches the PostgreSQL service name (`db`) and database name (`finance_tracker`).
+- **Telegram bot issues**: If using the optional Telegram bot, ensure the `TELEGRAM_BOT_TOKEN` is correctly set in the `.env` file and that the bot is properly registered with BotFather. If the bot fails to start, it will not affect the core web application.
 - **Celery issues**: Ensure the `CELERY_BROKER_URL` in the `.env` file is set to `redis://redis:6379/0`.
 - **Docker permissions**: On Linux, if you encounter permission errors, add your user to the Docker group: `sudo usermod -aG docker $USER`.
 
