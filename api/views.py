@@ -1,5 +1,5 @@
 from finance.models import (Spents, Earnings, Account, SpentCategory,
-                     EarnCategory, UserCategory, UserProfile)
+                     EarnCategory, UserCategory)
 
 from django.http import JsonResponse
 from datetime import datetime, timedelta
@@ -7,29 +7,10 @@ from datetime import datetime, timedelta
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_datetime
-
-def check_api_token(view_func):
-    def wrapper(request, *args, **kwargs):
-        api_token = request.headers.get('Authorization', '')
-
-        if not api_token:
-            return JsonResponse({'error': 'Token not given'}, status=401)
-        
-        if api_token.startswith('Bearer '):
-            api_token = api_token[7:]
-        else:
-            return JsonResponse({'error': 'Token must statr with Bearer'}, status=401)
-        
-        try:
-            profile = UserProfile.objects.get(api_key=api_token)
-            request.api_user = profile.user
-        except UserProfile.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
-        
-        return view_func(request, *args, **kwargs)
-    return wrapper
+from .decorators import check_api_token, time_logger
 
 @csrf_exempt
+@time_logger
 @check_api_token
 @require_http_methods(["GET"])
 def api_check_token(request):
@@ -39,6 +20,7 @@ def api_check_token(request):
     })
 
 @csrf_exempt
+@time_logger
 @check_api_token
 @require_http_methods(["GET"])
 def api_user_accounts(request):
@@ -63,6 +45,7 @@ def api_user_accounts(request):
     return JsonResponse({'error': 'Accounts cannot be found'}, status=401)
 
 @csrf_exempt
+@time_logger
 @check_api_token
 @require_http_methods(["GET"])
 def api_user_transactions(request):
@@ -120,6 +103,7 @@ def api_user_transactions(request):
     return JsonResponse({'error': 'Transactions cannot be found'}, status=404)
 
 @csrf_exempt
+@time_logger
 @check_api_token
 @require_http_methods(["GET"])
 def api_categories_get(request):

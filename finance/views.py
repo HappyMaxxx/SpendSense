@@ -631,7 +631,7 @@ def delete_api_token(request):
     except:
         user_profile = None
     
-    return render(request, 'finance/link_api.html')
+    return redirect('link_api')
 
 
 class PageNotFoundView(View):
