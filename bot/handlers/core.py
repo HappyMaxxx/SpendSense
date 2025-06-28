@@ -1,15 +1,50 @@
+import asyncio
 from aiogram import types
 from aiogram.filters.command import CommandObject
+from aiogram.fsm.context import FSMContext
+from services.linking import get_user_profile_sync
+from keyboards.main import get_linked_user_keyboard
+from states import UserState
 
-from services import link_account
-
-async def start_handler(message: types.Message, command: CommandObject):
+async def start_handler(message: types.Message, command: CommandObject, state: FSMContext):
     if command.args:
         token = command.args
-        await link_account(token, message)
+        from services.linking import link_account
+        await link_account(token, message, state)
         return
 
-    await message.answer("Hello! I will start working very soon!")
+    profile = await asyncio.to_thread(get_user_profile_sync, tg_id=message.from_user.id)
     
-async def help_handler(message: types.Message):
-    await message.answer("This is help on command...")
+    if profile and profile.telegram_id:
+        await state.set_state(UserState.linked)
+        await message.answer(
+            f"Welcome back, {profile.user.username}! What would you like to do?",
+            reply_markup=get_linked_user_keyboard()
+        )
+    else:
+        await state.set_state(UserState.unlinked)
+        await message.answer(
+            "Hello! Please link your account using /link <token> to get started.",
+            reply_markup=types.ReplyKeyboardRemove()
+        )
+
+async def help_handler(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    reply_markup = get_linked_user_keyboard() if current_state == UserState.linked else types.ReplyKeyboardRemove()
+    await message.answer("This is help on commands...", reply_markup=reply_markup)
+
+async def text_handler(message: types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    profile = await asyncio.to_thread(get_user_profile_sync, tg_id=message.from_user.id)
+    
+    if current_state == UserState.linked and profile and profile.telegram_id:
+        await message.answer(
+            "Choose an action:",
+            reply_markup=get_linked_user_keyboard()
+        )
+    else:
+        await state.set_state(UserState.unlinked)
+        await message.answer(
+            "Your account is not linked. Use /link <token> to link.",
+            reply_markup=types.ReplyKeyboardRemove()
+        )
