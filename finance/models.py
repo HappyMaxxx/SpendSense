@@ -69,10 +69,7 @@ class UserCategory(models.Model):
     is_spent = models.CharField(max_length=20, choices=TYPE_CHOICES, default='spent')
 
     def __str__(self):
-        if self.is_spent == 'spent':
-            return f'{self.value}'
-        else:
-            return f'{self.value}'
+        return f'{self.value}'
 
 
 class UserProfile(models.Model):

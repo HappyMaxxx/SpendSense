@@ -27,6 +27,7 @@ import secrets
 from decimal import Decimal
 from decouple import config
 from .tasks import test_task
+from api.views import get_transactions_data
 
 
 class LoginRequiredMixin(AccessMixin):
@@ -303,13 +304,12 @@ class HomeView(View):
 class UserProfileView(LoginRequiredMixin, View):
     def get(self, request):
         user = request.user
-
         if not user:
             return render(request, 'finance/404.html', status=404)
 
         period = request.GET.get('period', 'month')
-
         end_date = timezone.now()
+
         if period == 'week':
             start_date = end_date - relativedelta(weeks=1)
         elif period == 'month':
@@ -319,49 +319,42 @@ class UserProfileView(LoginRequiredMixin, View):
         else:
             start_date = end_date - relativedelta(months=1)
 
-        all_spents = Spents.objects.filter(user=user)
-        all_earnings = Earnings.objects.filter(user=user)
+        try:
+            data = get_transactions_data(user, start_date, end_date)
 
-        spents = [s for s in all_spents if start_date <= s.time_create <= end_date]
-        earnings = [e for e in all_earnings if start_date <= e.time_create <= end_date]
+            # AJAX
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'total_spending': float(data['total_spending']),
+                    'total_earning': float(data['total_earning']),
+                    'spents': [
+                        {'id': s.id, 'amount': float(s.amount), 'time_create': s.time_create.isoformat()}
+                        for s in data['spents']
+                    ],
+                    'earnings': [
+                        {'id': e.id, 'amount': float(e.amount), 'time_create': e.time_create.isoformat()}
+                        for e in data['earnings']
+                    ],
+                })
 
-        total_spending = sum(transaction.amount for transaction in spents) if spents else 0
-        total_earning = sum(transaction.amount for transaction in earnings) if earnings else 0
+            context = {
+                'user': user,
+                'total_spending': data['total_spending'],
+                'total_earning': data['total_earning'],
+                'total_all_spending': data['total_all_spending'],
+                'total_all_earning': data['total_all_earning'],
+                'total_all_diff': data['total_all_diff'],
+                'class': 'minus' if data['total_all_diff'] < 0 else 'plus',
+                'spents': data['spents'],
+                'earnings': data['earnings'],
+                'all_spents': data['all_spents'],
+                'all_earnings': data['all_earnings'],
+                'selected_period': period,
+            }
+            return render(request, 'finance/profile.html', context)
 
-        total_all_spending = sum(transaction.amount for transaction in all_spents) if all_spents else 0
-        total_all_earning = sum(transaction.amount for transaction in all_earnings) if all_earnings else 0
-
-        total_all_diff = total_all_earning - total_all_spending
-
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'total_spending': float(total_spending),  
-                'total_earning': float(total_earning),   
-                'spents': [
-                    {'id': s.id, 'amount': float(s.amount), 'time_create': s.time_create.isoformat()}
-                    for s in spents
-                ], 
-                'earnings': [
-                    {'id': e.id, 'amount': float(e.amount), 'time_create': e.time_create.isoformat()}
-                    for e in earnings
-                ], 
-            })
-
-        context = {
-            'user': user,
-            'total_spending': total_spending,
-            'total_earning': total_earning,
-            'total_all_spending': total_all_spending,
-            'total_all_earning': total_all_earning,
-            'total_all_diff': total_all_diff,
-            'class': 'minus' if total_all_diff < 0 else 'plus',
-            'spents': spents,
-            'earnings': earnings,
-            'all_spents': all_spents,
-            'all_earnings': all_earnings,
-            'selected_period': period,
-        }
-        return render(request, 'finance/profile.html', context)
+        except Exception as e:
+            return render(request, 'finance/404.html', {'error': str(e)}, status=400)
 
 
 class UserExpenses(LoginRequiredMixin, View):

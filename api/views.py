@@ -151,7 +151,6 @@ def api_categories_get(request):
                 'value': cat.value,
                 'icon': getattr(cat, 'icon', None),
                 'type': getattr(cat, 'is_spent', 'earn' if isinstance(cat, EarnCategory) else 'spent'),
-                'transaction_name': str(cat),
             }
             for cat in categories
             ]
@@ -159,3 +158,55 @@ def api_categories_get(request):
         return JsonResponse(data)
 
     return JsonResponse({'error': 'Categories cannot be found'}, status=404)
+
+def get_transactions_data(user, start_date=None, end_date=None, api=False):
+    all_spents = Spents.objects.filter(user=user)
+    all_earnings = Earnings.objects.filter(user=user)
+
+    if not api:
+        spents = [s for s in all_spents if start_date <= s.time_create <= end_date] if start_date and end_date else all_spents
+        earnings = [e for e in all_earnings if start_date <= e.time_create <= end_date] if start_date and end_date else all_earnings
+
+        total_spending = sum(transaction.amount for transaction in spents) if spents else 0
+        total_earning = sum(transaction.amount for transaction in earnings) if earnings else 0
+
+    total_all_spending = sum(transaction.amount for transaction in all_spents) if all_spents else 0
+    total_all_earning = sum(transaction.amount for transaction in all_earnings) if all_earnings else 0
+    total_all_diff = total_all_earning - total_all_spending
+
+    data = {
+        'total_all_spending': total_all_spending,
+        'total_all_earning': total_all_earning,
+        'total_all_diff': total_all_diff,
+    }
+
+    if not api:
+        new_data = {
+            'spents': spents,
+            'earnings': earnings,
+            'all_spents': all_spents,
+            'all_earnings': all_earnings,
+            'total_spending': total_spending,
+            'total_earning': total_earning,
+        } 
+        data.update(new_data)
+
+    return data
+
+@csrf_exempt
+@time_logger
+@check_api_token
+@require_http_methods(["GET"])
+def profile_data(request):
+    user = request.api_user
+    try:
+        data = get_transactions_data(user, api=True)
+        response_data = {
+            'user': user.username,
+            'total_all_spending': float(data['total_all_spending']),
+            'total_all_earning': float(data['total_all_earning']),
+            'total_all_diff': float(data['total_all_diff']),
+        }
+        return JsonResponse(response_data)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
