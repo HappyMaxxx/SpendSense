@@ -9,7 +9,7 @@ from filters import Text
 
 import asyncio
 import logging
-from aiogram.fsm.context import FSMContext
+from aiogram.fsm.storage.redis import RedisStorage
 
 sys.path.append("/app")
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "spendsense.settings")
@@ -29,7 +29,8 @@ if not BOT_TOKEN:
     sys.exit(1) 
 
 bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(storage=MemoryStorage())
+storage = RedisStorage.from_url("redis://redis:6379/0")
+dp = Dispatcher(storage=storage)
 
 commands = [
     types.BotCommand(command="start", description="Get started"),
