@@ -19,6 +19,7 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 
 from handlers import (start_handler, help_handler, link_handler, unlink_handler, 
                       text_handler, keyboard_buttons_handler)
+from handlers.category import category_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ async def main():
     try:
         await on_startup()
         register_handlers(dp)
+        dp.include_router(category_router)
         await dp.start_polling(bot)
     except Exception as e:
         logger.error(f"An error occurred while running the bot: {e}")
