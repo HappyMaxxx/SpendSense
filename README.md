@@ -45,7 +45,7 @@ Create a `.env` file in the project root and add the following:
 ```env
 DJANGO_SECRET_KEY=your-secret-key-here
 DEBUG=False
-ALLOWED_HOSTS=localhost,127.0.0.1
+ALLOWED_HOSTS=web,localhost,127.0.0.1
 
 POSTGRES_DB=app_db
 POSTGRES_USER=postgres
@@ -179,7 +179,7 @@ volumes:
   postgres_data:
 ```
 
-> **Important**: redis, celery and flower services are currently temporarily commented out, as they are not yet in use
+> **Important**: celery and flower services are currently temporarily commented out, as they are not yet in use
 
 ## 🔧 Troubleshooting
 
@@ -217,7 +217,7 @@ To obtain an API token:
 
 #### 1. Check API Token
 
-- **URL**: `/api/v1/check_token/`
+- **URL**: `/api/v1/token/check/`
 - **Method**: `GET`
 - **Description**: Validates the provided API token and returns the associated username if valid.
 - **Response**:
@@ -344,7 +344,7 @@ To obtain an API token:
 
 #### 4. Get Categories
 
-- **URL**: `/api/v1/categories/`
+- **URL**: `/api/v1/categories/get/`
 - **Method**: `GET`
 - **Description**: Retrieves categories available to the authenticated user, optionally filtered by type or user-specific categories.
 - **Query Parameters**:
@@ -396,11 +396,49 @@ To obtain an API token:
     }
     ```
 
+#### 5. Get Profile Data
+
+- **URL**: `/api/v1/profile-data/`
+- **Method**: `GET`
+- **Description**: Retrieves the authenticated user's total spending, total earnings, and the difference between earnings and spending.
+- **Response**:
+  - **Success (200)**:
+    ```json
+    {
+      "user": "<username>",
+      "total_all_spending": <total_spending>,
+      "total_all_earning": <total_earning>,
+      "total_all_diff": <total_earning - total_spending>
+    }
+    ```
+  - **Error (400)**:
+    ```json
+    {
+      "error": "<error_message>"
+    }
+    ```
+  - **Error (401)**:
+    ```json
+    {
+      "error": "Token not given"
+    }
+    ```
+    ```json
+    {
+      "error": "Token must start with Bearer"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid token"
+    }
+    ```
+
 ### Example Usage
 
 #### Check API Token
 ```bash
-curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/check_token/
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/token/check/
 ```
 
 #### Get User Accounts
@@ -410,12 +448,17 @@ curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/ac
 
 #### Get Transactions for a Date Range
 ```bash
-curl -H "Authorization: Bearer <your-api-token>" "http://localhost:8000/api/v1/transactions/?from=2024-06-01T00:00:00&to=2024-06-30T23:59:59"
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/transactions/?from=2024-06-01T00:00:00&to=2024-06-30T23:59:59
 ```
 
 #### Get Categories
 ```bash
-curl -H "Authorization: Bearer <your-api-token>" "http://localhost:8000/api/v1/categories/?type=spent&user=true"
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/categories/get/?type=spent&user=true
+```
+
+##### Get Profile Data
+```bash
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/profile-data/
 ```
 
 ## 📜 License
