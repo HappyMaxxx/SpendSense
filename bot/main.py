@@ -3,9 +3,9 @@ import django
 import sys
 from decouple import config
 from aiogram import Bot, Dispatcher, types
-from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.filters import Command
 from filters import Text
+from aiogram.filters import StateFilter
 
 import asyncio
 import logging
@@ -46,7 +46,7 @@ def register_handlers(dp: Dispatcher):
     dp.message.register(link_handler, Command(commands=["link"]))
     dp.message.register(unlink_handler, Command(commands=["unlink"]))
     dp.message.register(keyboard_buttons_handler, Text(text=["Profile", "Expense", "Income"]))
-    dp.message.register(text_handler)
+    dp.message.register(text_handler, StateFilter(None))
 
 async def on_startup():
     await bot.set_my_commands(commands)

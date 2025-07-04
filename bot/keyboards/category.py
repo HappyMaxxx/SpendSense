@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-def build_inline_keyboard(categories: list[dict], type: str, row_width: int = 4) -> InlineKeyboardMarkup:
+def build_inline_keyboard_cat(categories: list[dict], type: str, row_width: int = 4) -> InlineKeyboardMarkup:
     if type in ['e', 's']:
         buttons = [
             InlineKeyboardButton(

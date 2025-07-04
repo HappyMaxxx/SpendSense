@@ -6,14 +6,14 @@ import aiohttp
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from services.linking import get_user_profile_sync
-from states import UserState
-from keyboards.category import build_inline_keyboard
+from states import UserLinkState
+from keyboards.category import build_inline_keyboard_cat
 
 async def keyboard_buttons_handler(message: types.Message, state: FSMContext):
     current_state = await state.get_state()
     profile = await asyncio.to_thread(get_user_profile_sync, tg_id=message.from_user.id)
 
-    if current_state == UserState.linked and profile and profile.telegram_id:
+    if current_state == UserLinkState.linked and profile and profile.telegram_id:
         if message.text == "Profile":
             await profile_handler(message, profile)
         elif message.text == "Expense":
@@ -21,7 +21,7 @@ async def keyboard_buttons_handler(message: types.Message, state: FSMContext):
         elif message.text == "Income":
             await income_handler(message, profile, state)
     else:
-        await state.set_state(UserState.unlinked)
+        await state.set_state(UserLinkState.unlinked)
         await message.answer(
             "Your account is not linked. Use /link <token> to link.",
             reply_markup=types.ReplyKeyboardRemove()
@@ -48,8 +48,6 @@ async def profile_handler(message: types.Message, profile):
             else:
                 await message.answer("❌ Failed to get profile data.")
 
-from aiogram.fsm.context import FSMContext
-
 async def expense_handler(message: types.Message, profile, state: FSMContext):
     url = 'http://web:8000/api/v1/categories/get/'
     headers = {"Authorization": f"Bearer {profile.api_key}"}
@@ -63,12 +61,10 @@ async def expense_handler(message: types.Message, profile, state: FSMContext):
 
                 await state.update_data(last_categories=cats, category_type='spent')
 
-                keyboard = build_inline_keyboard(cats, type='s', )
+                keyboard = build_inline_keyboard_cat(cats, type='s')
                 await message.answer("Select a category:", reply_markup=keyboard)
             else:
                 await message.answer("❌ Failed to get spent categories.")
-
-
 
 async def income_handler(message: types.Message, profile, state: FSMContext):
     url = 'http://web:8000/api/v1/categories/get/'
@@ -87,7 +83,7 @@ async def income_handler(message: types.Message, profile, state: FSMContext):
 
                 await state.update_data(last_categories=cats, category_type='earn')
 
-                keyboard = build_inline_keyboard(cats, type='e')
+                keyboard = build_inline_keyboard_cat(cats, type='e')
                 await message.answer("Select a category:", reply_markup=keyboard)
             else:
                 await message.answer("❌ Failed to get spent categories.")
