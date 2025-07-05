@@ -3,17 +3,25 @@ from finance.models import (Spents, Earnings, Account, SpentCategory,
 
 from django.http import JsonResponse
 from datetime import datetime, timedelta
+from django.utils import timezone
 
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_datetime
 from .decorators import check_api_token, time_logger
+from .validation import validate_required_params, validate_amount
 
 @csrf_exempt
 @time_logger
 @check_api_token
 @require_http_methods(["GET"])
-def api_check_token(request):
+def check_token(request):
+    """
+    Checks if the API token is valid.
+
+    Returns:
+        JsonResponse: Status and the authenticated username.
+    """
     return JsonResponse({
         'status': 'valid',
         'user': request.api_user.username
@@ -23,7 +31,13 @@ def api_check_token(request):
 @time_logger
 @check_api_token
 @require_http_methods(["GET"])
-def api_user_accounts(request):
+def user_accounts(request):
+    """
+    Retrieves the authenticated user's accounts and balances.
+
+    Returns:
+        JsonResponse: Username and list of accounts with balances.
+    """
     try:
         accounts = Account.objects.filter(user=request.api_user)
     except:
@@ -48,7 +62,17 @@ def api_user_accounts(request):
 @time_logger
 @check_api_token
 @require_http_methods(["GET"])
-def api_user_transactions(request):
+def user_transactions(request):
+    """
+    Retrieves user transactions (both earnings and expenses) in a date range.
+
+    Query Parameters:
+        from (str): Start date in ISO 8601 format (optional).
+        to (str): End date in ISO 8601 format (optional).
+
+    Returns:
+        JsonResponse: List of user transactions or error message.
+    """
     user = request.api_user
     from_param = request.GET.get('from')
     to_param = request.GET.get('to')
@@ -106,7 +130,19 @@ def api_user_transactions(request):
 @time_logger
 @check_api_token
 @require_http_methods(["GET"])
-def api_categories_get(request):
+def categories_get(request):
+    """
+    Retrieves expense or income categories for the authenticated user.
+
+    Query Parameters:
+        type (str): 'spent', 'earn', or None for all.
+        user (str): 'true' for user-created categories only,
+                    'false' for system categories only,
+                    None for both.
+
+    Returns:
+        JsonResponse: List of categories with name, value, icon, and type.
+    """
     user = request.api_user
     type_param = request.GET.get('type')  # 'spent', 'earn' or None
     user_param = request.GET.get('user')  # 'true', 'false' or None
@@ -160,6 +196,18 @@ def api_categories_get(request):
     return JsonResponse({'error': 'Categories cannot be found'}, status=404)
 
 def get_transactions_data(user, start_date=None, end_date=None, api=False):
+    """
+    Collects transaction summary statistics for a user.
+
+    Args:
+        user (User): Authenticated user.
+        start_date (datetime): Start filter date.
+        end_date (datetime): End filter date.
+        api (bool): If called from API.
+
+    Returns:
+        dict: Financial totals and filtered transactions if not API.
+    """
     all_spents = Spents.objects.filter(user=user)
     all_earnings = Earnings.objects.filter(user=user)
 
@@ -198,6 +246,12 @@ def get_transactions_data(user, start_date=None, end_date=None, api=False):
 @check_api_token
 @require_http_methods(["GET"])
 def profile_data(request):
+    """
+    Retrieves aggregated profile statistics: total income, spending, and net.
+
+    Returns:
+        JsonResponse: Financial profile summary or error.
+    """
     user = request.api_user
     try:
         data = get_transactions_data(user, api=True)
@@ -210,3 +264,90 @@ def profile_data(request):
         return JsonResponse(response_data)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+@csrf_exempt
+@time_logger
+@check_api_token
+@require_http_methods(["GET"])
+def create_transactions(request):
+    """
+    Creates a new transaction (income or expense) for the user.
+
+    Query Parameters:
+        account (str): Account name.
+        category (str): Category value.
+        amount (str or float): Transaction amount.
+        type (str): Either 'spent' or 'earn'.
+
+    Returns:
+        JsonResponse: Status OK or error message.
+    """
+    user = request.api_user
+    account_param = request.GET.get('account')
+    category_param = request.GET.get('category')
+    amount_param = request.GET.get('amount')
+    trans_type = request.GET.get('type')
+
+    validation_response = validate_required_params({
+        'account': account_param,
+        'category': category_param,
+        'amount': amount_param,
+        'type': trans_type
+    })
+
+    if validation_response:
+        return validation_response
+
+    try:
+        account = Account.objects.get(user=user, name=account_param)
+
+        if trans_type == 'earn':
+            category = (
+                EarnCategory.objects.filter(value=category_param).first() or
+                UserCategory.objects.filter(user=user, is_spent='earn', value=category_param).first()
+            )
+        elif trans_type == 'spent':
+            category = (
+                SpentCategory.objects.filter(value=category_param).first() or
+                UserCategory.objects.filter(user=user, is_spent='spent', value=category_param).first()
+            )
+        else:
+            return JsonResponse({'error': 'The type parameter must be either “spent” or “earn”!'}, status=400)
+
+        if not category:
+            return JsonResponse({'error': 'Category not found!'}, status=404)
+
+        amount, amount_error = validate_amount(amount_param)
+        if amount_error:
+            return amount_error
+
+        try:
+            now = timezone.now()
+            if trans_type == "spent":
+                Spents.objects.create(
+                    account=account,
+                    category=category_param,
+                    amount=amount,  
+                    time_create=now,
+                    time_update=now,
+                    user=user
+                )
+            elif trans_type == "earn":
+                Earnings.objects.create(
+                    account=account,
+                    category=category_param,
+                    amount=amount,  
+                    time_create=now,
+                    time_update=now,
+                    user=user
+                )
+            else:
+                return JsonResponse({'error': 'The type parameter must be either “spent” or “earn”!'}, status=400)
+        except:
+            return JsonResponse({'error': 'A problem occurred while creating a transaction.'}, status=400)
+        return JsonResponse({'status': 'ok'})
+
+    except Account.DoesNotExist:
+        return JsonResponse({'error': 'Account not found!'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
