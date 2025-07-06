@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.dateparse import parse_datetime
 from .decorators import check_api_token, time_logger
 from .validation import validate_required_params, validate_amount
+from decimal import Decimal
 
 @csrf_exempt
 @time_logger
@@ -332,6 +333,8 @@ def create_transactions(request):
                     time_update=now,
                     user=user
                 )
+                account.balance = Decimal(str(account.balance)) - Decimal(str(amount))
+                account.save()
             elif trans_type == "earn":
                 Earnings.objects.create(
                     account=account,
@@ -341,6 +344,8 @@ def create_transactions(request):
                     time_update=now,
                     user=user
                 )
+                account.balance = Decimal(str(account.balance)) + Decimal(str(amount))
+                account.save()
             else:
                 return JsonResponse({'error': 'The type parameter must be either “spent” or “earn”!'}, status=400)
         except:

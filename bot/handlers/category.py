@@ -141,15 +141,35 @@ async def process_account_callback(callback_query: CallbackQuery, state: FSMCont
         await state.set_state(UserLinkState.linked)
         return
 
+    url = "http://web:8000/api/v1/transactions/create/"
+    params = {
+        "account": account,
+        "category": selected_category,
+        "amount": str(amount),
+        "type": category_type
+    }
+    headers = {"Authorization": f"Bearer {profile.api_key}"}
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, params=params, headers=headers) as response:
+            if response.status == 200:
+                resp_data = await response.json()
+                if resp_data.get("status") == "ok":
+                    msg = (
+                        f"✅ Transaction saved!\n"
+                        f"Category: {selected_category}\n"
+                        f"Type: {category_type}\n"
+                        f"Amount: {amount}\n"
+                        f"Account: {account}"
+                    )
+                else:
+                    msg = f"❌ Failed to save transaction: {resp_data.get('error', 'Unknown error')}"
+            else:
+                msg = f"❌ Failed to save transaction. Status code: {response.status}"
+
     await callback_query.message.delete()
     await callback_query.answer()
-    await callback_query.message.answer(
-        f"✅ Transaction saved!\n"
-        f"Category: {selected_category}\n"
-        f"Type: {category_type}\n"
-        f"Amount: {amount}\n"
-        f"Account: {account}"
-    )
+    await callback_query.message.answer(msg)
 
     await state.set_state(UserLinkState.linked)
     await state.update_data(selected_category=None, category_type=None, amount=None)
