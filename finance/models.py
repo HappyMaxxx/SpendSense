@@ -68,6 +68,11 @@ class UserCategory(models.Model):
     icon = models.CharField(max_length=4)
     is_spent = models.CharField(max_length=20, choices=TYPE_CHOICES, default='spent')
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'value'], name='unique_value_per_user')
+        ]
+
     def __str__(self):
         return f'{self.value}'
 

@@ -356,3 +356,66 @@ def create_transactions(request):
         return JsonResponse({'error': 'Account not found!'}, status=404)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+    
+@csrf_exempt
+@time_logger
+@check_api_token
+@require_http_methods(["GET"])
+def create_category(request):
+    """
+    Creates a new category (income or expense) for the user.
+
+    Query Parameters:
+        name (str): New category name.
+        icon (str): New category icon (emoji).
+        type (str): Either 'spent' or 'earn'.
+
+    Returns:
+        JsonResponse: Status OK or error message.
+    """
+    user = request.api_user
+    name_param = request.GET.get('name')
+    icon_param = request.GET.get('icon')
+    trans_type = request.GET.get('type')
+
+    validation_response = validate_required_params({
+        'name': name_param,
+        'icon': icon_param,
+        'type': trans_type
+    })
+
+    if validation_response:
+        return validation_response
+
+    try:
+
+        if trans_type in ['earn', 'spent']:
+            pass
+        else:
+            return JsonResponse({'error': 'The type parameter must be either “spent” or “earn”!'}, status=400)
+
+        try:
+            if trans_type == "spent":
+                UserCategory.objects.create(
+                    name=name_param,
+                    icon=icon_param,
+                    value=name_param.lower(),
+                    is_spent="spent",
+                    user=user
+                )
+            elif trans_type == "earn":
+                UserCategory.objects.create(
+                    name=name_param,
+                    icon=icon_param,
+                    value=name_param.lower(),
+                    is_spent="earn",
+                    user=user
+                )
+            else:
+                return JsonResponse({'error': 'The type parameter must be either “spent” or “earn”!'}, status=400)
+        except:
+            return JsonResponse({'error': 'A problem occurred while creating a category.'}, status=400)
+        return JsonResponse({'status': 'ok'})
+
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
