@@ -296,6 +296,61 @@ To obtain an API token:
     }
     ```
 
+#### 7. Create Category
+
+- **URL**: `/api/v1/categories/create/`
+- **Method**: `GET`
+- **Description**: Creates a new income or expense category for the authenticated user.
+- **Query Parameters**:
+  - `name` (string, required): Name of the new category.
+  - `icon` (string, required): Emoji or icon for the category.
+  - `type` (string, required): Category type, must be either `"spent"` or `"earn"`.
+- **Response**:
+  - **Success (200)**:
+    ```json
+    {
+      "status": "ok"
+    }
+    ```
+  - **Error (400)**:
+    ```json
+    {
+      "error": "The type parameter must be either “spent” or “earn”!"
+    }
+    ```
+    ```json
+    {
+      "error": "A problem occurred while creating a category."
+    }
+    ```
+    ```json
+    {
+      "error": "<validation_error_message>"
+    }
+    ```
+  - **Error (401)**:
+    ```json
+    {
+      "error": "Token not given"
+    }
+    ```
+    ```json
+    {
+      "error": "Token must start with Bearer"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid token"
+    }
+    ```
+  - **Error (500)**:
+    ```json
+    {
+      "error": "<error_message>"
+    }
+    ```
+
 ### Example Usage
 
 #### Check API Token
@@ -318,12 +373,17 @@ curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/tr
 curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/categories/get/?type=spent&user=true
 ```
 
-##### Get Profile Data
+#### Get Profile Data
 ```bash
 curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/profile-data/
 ```
 
-##### Сreate a Transaction
+#### Create a Transaction
 ```bash
 curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/transactions/create/?type=spent&account=Main&category=supermarket&amount=150
+```
+
+#### Create a Category
+```bash
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/categories/create/?type=spent&name=Groceries&icon=🛒
 ```
