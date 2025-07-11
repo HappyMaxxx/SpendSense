@@ -10,6 +10,12 @@ def build_inline_keyboard_cat(categories: list[dict], type: str, row_width: int 
             for cat in categories
         ]
 
+        buttons.append(InlineKeyboardButton(
+                # text="➕",
+                text="+",
+                callback_data=f"create_{type}"
+            ))
+
         keyboard_rows = [
             buttons[i:i + row_width]
             for i in range(0, len(buttons), row_width)

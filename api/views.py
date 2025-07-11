@@ -12,6 +12,9 @@ from .decorators import check_api_token, time_logger
 from .validation import validate_required_params, validate_amount
 from decimal import Decimal
 
+import urllib.parse
+import emoji
+
 @csrf_exempt
 @time_logger
 @check_api_token
@@ -367,7 +370,7 @@ def create_category(request):
 
     Query Parameters:
         name (str): New category name.
-        icon (str): New category icon (emoji).
+        icon (str): New category icon (emoji, either URL-encoded or raw emoji).
         type (str): Either 'spent' or 'earn'.
 
     Returns:
@@ -378,9 +381,21 @@ def create_category(request):
     icon_param = request.GET.get('icon')
     trans_type = request.GET.get('type')
 
+    # Check if icon is already a valid emoji
+    if icon_param and emoji.is_emoji(icon_param) and len(icon_param) <= 2:
+        decoded_icon = icon_param
+    else:
+        # Attempt to decode URL-encoded icon
+        try:
+            decoded_icon = urllib.parse.unquote(icon_param) if icon_param else None
+            if decoded_icon and (not emoji.is_emoji(decoded_icon) or len(decoded_icon) > 2):
+                return JsonResponse({'error': 'Icon must be a single valid emoji.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': f'Invalid icon format: {str(e)}'}, status=400)
+
     validation_response = validate_required_params({
         'name': name_param,
-        'icon': icon_param,
+        'icon': decoded_icon,
         'type': trans_type
     })
 
@@ -388,34 +403,17 @@ def create_category(request):
         return validation_response
 
     try:
+        if trans_type not in ['earn', 'spent']:
+            return JsonResponse({'error': 'The type parameter must be either "spent" or "earn"!'}, status=400)
 
-        if trans_type in ['earn', 'spent']:
-            pass
-        else:
-            return JsonResponse({'error': 'The type parameter must be either “spent” or “earn”!'}, status=400)
-
-        try:
-            if trans_type == "spent":
-                UserCategory.objects.create(
-                    name=name_param,
-                    icon=icon_param,
-                    value=name_param.lower(),
-                    is_spent="spent",
-                    user=user
-                )
-            elif trans_type == "earn":
-                UserCategory.objects.create(
-                    name=name_param,
-                    icon=icon_param,
-                    value=name_param.lower(),
-                    is_spent="earn",
-                    user=user
-                )
-            else:
-                return JsonResponse({'error': 'The type parameter must be either “spent” or “earn”!'}, status=400)
-        except:
-            return JsonResponse({'error': 'A problem occurred while creating a category.'}, status=400)
+        UserCategory.objects.create(
+            name=name_param,
+            icon=decoded_icon,
+            value=name_param.lower(),
+            is_spent=trans_type,
+            user=user
+        )
         return JsonResponse({'status': 'ok'})
 
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'error': f'A problem occurred while creating a category: {str(e)}'}, status=400)
