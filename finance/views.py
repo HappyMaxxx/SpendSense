@@ -27,7 +27,7 @@ import secrets
 from decimal import Decimal
 from decouple import config
 from .tasks import test_task
-from api.views import get_transactions_data
+from api.views.views import get_transactions_data
 
 
 class LoginRequiredMixin(AccessMixin):

@@ -1,14 +1,14 @@
 from django.urls import path
-from django.conf import settings
-from django.conf.urls.static import static
-from . import views
+from .views.views import check_token, user_accounts, profile_data
+from .views.category_views import categories_get, create_category
+from .views.transaction_views import user_transactions, create_transactions
 
 urlpatterns = [
-    path('api/v1/token/check/', views.check_token, name='token_check'),
-    path('api/v1/accounts/', views.user_accounts, name='api_accounts'),
-    path('api/v1/transactions/', views.user_transactions, name='api_transactions'),
-    path('api/v1/transactions/create/', views.create_transactions, name='transactions_get'),
-    path('api/v1/categories/get/', views.categories_get, name='api_categories_get'),
-    path('api/v1/categories/create/', views.create_category, name='api_categories_create'),
-    path('api/v1/profile-data/', views.profile_data, name='profile_data'),
+    path('api/v1/token/check/', check_token, name='token_check'),
+    path('api/v1/accounts/', user_accounts, name='api_accounts'),
+    path('api/v1/transactions/', user_transactions, name='api_transactions'),
+    path('api/v1/transactions/create/', create_transactions, name='transactions_get'),
+    path('api/v1/categories/get/', categories_get, name='api_categories_get'),
+    path('api/v1/categories/create/', create_category, name='api_categories_create'),
+    path('api/v1/profile-data/', profile_data, name='profile_data'),
 ]
