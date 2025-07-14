@@ -1,4 +1,4 @@
-from finance.models import (Spents, Earnings, Account)
+from finance.models import Spents, Earnings
 
 from django.http import JsonResponse
 
@@ -21,37 +21,6 @@ def check_token(request):
         'status': 'valid',
         'user': request.api_user.username
     })
-
-@csrf_exempt
-@time_logger
-@check_api_token
-@require_http_methods(["GET"])
-def user_accounts(request):
-    """
-    Retrieves the authenticated user's accounts and balances.
-
-    Returns:
-        JsonResponse: Username and list of accounts with balances.
-    """
-    try:
-        accounts = Account.objects.filter(user=request.api_user)
-    except:
-        return JsonResponse({'error': 'Accounts cannot be found'}, status=401)
-
-    if accounts:
-        data = {
-            'user': request.api_user.username,
-            'accounts': [
-                {
-                    'account': account.name,
-                    'balance': account.balance,
-                }
-                for account in accounts
-            ]
-        }
-
-        return JsonResponse(data)
-    return JsonResponse({'error': 'Accounts cannot be found'}, status=401)
 
 def get_transactions_data(user, start_date=None, end_date=None, api=False):
     """

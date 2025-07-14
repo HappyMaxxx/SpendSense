@@ -8,6 +8,11 @@ class Account(models.Model):
     balance = models.DecimalField(max_digits=10, decimal_places=2)
     currency = models.CharField(max_length=10, default='₴')
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'name'], name='unique_name_per_user')
+        ]
+
     def __str__(self):
         return f"{self.name} {self.user} ({self.balance} {self.currency})"
 
