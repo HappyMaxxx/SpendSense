@@ -48,7 +48,7 @@ To obtain an API token:
 
 #### 2. Get User Accounts
 
-- **URL**: `/api/v1/accounts/`
+- **URL**: `/api/v1/accounts/get/`
 - **Method**: `GET`
 - **Description**: Retrieves a list of accounts for the authenticated user.
 - **Response**:
@@ -87,7 +87,61 @@ To obtain an API token:
     }
     ```
 
-#### 3. Get User Transactions
+#### 3. Create Account
+
+- **URL**: `/api/v1/accounts/create/`
+- **Method**: `GET`
+- **Description**: Creates a new account for the authenticated user.
+- **Query Parameters**:
+  - `account` (string, required): Name of the account.
+  - `amount` (float, optional): Initial balance of the account. Defaults to 0 if not provided.
+- **Response**:
+  - **Success (200)**:
+    ```json
+    {
+      "status": "ok"
+    }
+    ```
+  - **Error (400)**:
+    ```json
+    {
+      "error": "A problem occurred while creating an account."
+    }
+    ```
+    ```json
+    {
+      "error": "account parameter is required"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid amount format. Must be a number."
+    }
+    ```
+  - **Error (401)**:
+    ```json
+    {
+      "error": "Token not given"
+    }
+    ```
+    ```json
+    {
+      "error": "Token must start with Bearer"
+    }
+    ```
+    ```json
+    {
+      "error": "Invalid token"
+    }
+    ```
+  - **Error (500)**:
+    ```json
+    {
+      "error": "<error_message>"
+    }
+    ```
+
+#### 4. Get User Transactions
 
 - **URL**: `/api/v1/transactions/`
 - **Method**: `GET`
@@ -143,7 +197,7 @@ To obtain an API token:
     }
     ```
 
-#### 4. Get Categories
+#### 5. Get Categories
 
 - **URL**: `/api/v1/categories/get/`
 - **Method**: `GET`
@@ -197,7 +251,7 @@ To obtain an API token:
     }
     ```
 
-#### 5. Get Profile Data
+#### 6. Get Profile Data
 
 - **URL**: `/api/v1/profile-data/`
 - **Method**: `GET`
@@ -235,7 +289,7 @@ To obtain an API token:
     }
     ```
 
-#### 6. Create Transaction
+#### 7. Create Transaction
 
 - **URL**: `/api/v1/transactions/create/`
 - **Method**: `GET`
@@ -296,7 +350,7 @@ To obtain an API token:
     }
     ```
 
-#### 7. Create Category
+#### 8. Create Category
 
 - **URL**: `/api/v1/categories/create/`
 - **Method**: `GET`
@@ -361,6 +415,11 @@ curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/to
 #### Get User Accounts
 ```bash
 curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/accounts/
+```
+
+#### Create an Account
+```bash
+curl -H "Authorization: Bearer <your-api-token>" http://localhost:8000/api/v1/accounts/create/?account=Main&amount=1000
 ```
 
 #### Get Transactions for a Date Range
