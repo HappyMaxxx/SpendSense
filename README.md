@@ -1,5 +1,7 @@
 # SpendSense 💰
 
+![SpendSense Logo](src/img/logo.png)
+
 **SpendSense** is a web application for budget and expense tracking, built with Django and powered by PostgreSQL and Redis. It uses Docker for easy setup and deployment, making it simple to manage your finances.
 
 ## ✨ Features
@@ -200,6 +202,18 @@ To access **SpendSense** or the Flower dashboard from another device on your loc
 ## 📚 API Documentation
 
 Full API documentation is available in [API.md](./API.md)
+
+## 🛠️ API Client
+
+For easier interaction with the **SpendSense** API, you can use the dedicated [SpendSense-API-Client](https://github.com/HappyMaxxx/SpendSense-API-Client). This helper program simplifies making API requests to manage your budgets, transactions, and other features programmatically.
+
+- **Repository**: [https://github.com/HappyMaxxx/SpendSense-API-Client](https://github.com/HappyMaxxx/SpendSense-API-Client)
+- **Features**: 
+  - Simplified API calls for creating, updating, and retrieving financial data.
+  - Command-line interface for quick access to SpendSense functionality.
+  - Well-documented examples to get started.
+
+Check the repository for setup instructions and usage details.
 
 ## 📜 License
 
