@@ -1,6 +1,17 @@
 # SpendSense 💰
 
-![SpendSense Logo](src/img/logo.png)
+<p align="center">
+  <img src="src/img/logo.png" alt="SpendSense Logo" />
+</p>
+
+<p align="center">
+  <a href="https://ko-fi.com/v1mer" target="_blank">
+    <img src="https://img.shields.io/badge/Support-Ko--fi-FF5E5B?style=flat-square&logo=ko-fi&logoColor=white" alt="Support me on Ko-fi" />
+  </a>
+  <a href="mailto:mpatik2006@gmail.com">
+    <img src="https://img.shields.io/badge/Donate-PayPal-00457C?style=flat-square&logo=paypal&logoColor=white" alt="Donate via PayPal" />
+  </a>
+</p>
 
 **SpendSense** is a web application for budget and expense tracking, built with Django and powered by PostgreSQL and Redis. It uses Docker for easy setup and deployment, making it simple to manage your finances.
 
@@ -214,6 +225,15 @@ For easier interaction with the **SpendSense** API, you can use the dedicated [S
   - Well-documented examples to get started.
 
 Check the repository for setup instructions and usage details.
+
+## 🙌 Support the Project
+
+If you find this project useful and would like to support its development, consider donating:
+
+- 💖 Ko-fi: [https://ko-fi.com/v1mer](https://ko-fi.com/v1mer)
+- 📬 PayPal: mpatik2006@gmail.com
+
+Your support helps me dedicate more time to improving this project. Thank you! 🙏
 
 ## 📜 License
 
