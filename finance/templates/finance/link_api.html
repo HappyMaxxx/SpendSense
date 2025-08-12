@@ -10,20 +10,14 @@
     </p>
 
     <p>
-        Status: {% if profile.api_key %} Generated {% else %} Not generated {% endif %}
+        Status: {% if token_key %} Generated {% else %} Not generated {% endif %}
     </p>
 
-    {% if profile.api_key %}
+    {% if token_key %}
         <div class="space-y-4">
             <div class="relative">
                 <label for="api_token" class="block text-sm font-medium text-gray-700">Your API Token</label>
-                <input 
-                    type="password" 
-                    id="api_token" 
-                    value="{{ profile.api_key }}" 
-                    readonly 
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100"
-                >
+                <input type="password" id="api_token" value="{{ token_key }}" readonly ...>
             </div>
             <div class="flex space-x-4" style="gap:5%; margin-top: 1rem; margin-bottom: 2rem;">
                 <button 
@@ -50,19 +44,11 @@
             </div>
         </div>
     {% else %}
-        <div class="center_div">
-            <form method="post">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="ss_api">
-                <button 
-                    type="submit" 
-                    class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-                    style="margin-bottom: 15%;"
-                >
-                    Generate API Token
-                </button>
-            </form>
-        </div>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="ss_api">
+            <button type="submit">Generate API Token</button>
+        </form>
     {% endif %}
     
     <!-- MONO API -->

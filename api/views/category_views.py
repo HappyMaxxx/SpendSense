@@ -1,5 +1,7 @@
 from finance.models import (SpentCategory, EarnCategory, UserCategory)
-
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 from django.http import JsonResponse
 
 from django.views.decorators.http import require_http_methods
@@ -10,11 +12,7 @@ from api.validation import validate_required_params
 import urllib.parse
 import emoji
 
-@csrf_exempt
-@time_logger
-@check_api_token
-@require_http_methods(["GET"])
-def categories_get(request):
+class CategoriesGetView(APIView):
     """
     Retrieves expense or income categories for the authenticated user.
 
@@ -27,63 +25,66 @@ def categories_get(request):
     Returns:
         JsonResponse: List of categories with name, value, icon, and type.
     """
-    user = request.api_user
-    type_param = request.GET.get('type')  # 'spent', 'earn' or None
-    user_param = request.GET.get('user')  # 'true', 'false' or None
 
-    include_user = user_param == 'true'
-    categories = []
+    @time_logger
+    def get(self, request):
+        user = request.user
+        type_param = request.query_params.get('type')
+        user_param = request.query_params.get('user')
 
-    try:
-        if type_param == 'spent':
-            categories += list(SpentCategory.objects.all())
-            if include_user:
-                categories = list(UserCategory.objects.filter(user=user, is_spent='spent'))
-            elif user_param is None:
-                categories += list(UserCategory.objects.filter(user=user, is_spent='spent'))
+        include_user = user_param == 'true'
+        categories = []
 
-        elif type_param == 'earn':
-            categories += list(EarnCategory.objects.all())
-            if include_user:
-                categories = list(UserCategory.objects.filter(user=user, is_spent='earn'))
-            elif user_param is None:
-                categories += list(UserCategory.objects.filter(user=user, is_spent='earn'))
+        try:
+            if type_param == 'spent':
+                # Get system spent categories
+                categories += list(SpentCategory.objects.all())
+                if include_user:
+                    # User-created spent categories only
+                    categories = list(UserCategory.objects.filter(user=user, is_spent='spent'))
+                elif user_param is None:
+                    # Add user-created spent categories
+                    categories += list(UserCategory.objects.filter(user=user, is_spent='spent'))
 
-        elif type_param is None:
-            categories += list(SpentCategory.objects.all()) + list(EarnCategory.objects.all())
-            if include_user:
-                categories = list(UserCategory.objects.filter(user=user))
-            elif user_param is None:
-                categories += list(UserCategory.objects.filter(user=user))
+            elif type_param == 'earn':
+                categories += list(EarnCategory.objects.all())
+                if include_user:
+                    categories = list(UserCategory.objects.filter(user=user, is_spent='earn'))
+                elif user_param is None:
+                    categories += list(UserCategory.objects.filter(user=user, is_spent='earn'))
 
-        else:
-            return JsonResponse({'error': 'Invalid type parameter. Must be "spent", "earn", or omitted.'}, status=400)
-    
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+            elif type_param is None:
+                # Both spent and earn system categories
+                categories += list(SpentCategory.objects.all()) + list(EarnCategory.objects.all())
+                if include_user:
+                    categories = list(UserCategory.objects.filter(user=user))
+                elif user_param is None:
+                    categories += list(UserCategory.objects.filter(user=user))
 
-    if categories:
-        data = {
-            'user': request.api_user.username,
-            'categories': [
-            {
-                'name': cat.name,
-                'value': cat.value,
-                'icon': getattr(cat, 'icon', None),
-                'type': getattr(cat, 'is_spent', 'earn' if isinstance(cat, EarnCategory) else 'spent'),
+            else:
+                return Response({'error': 'Invalid type parameter. Must be "spent", "earn", or omitted.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        if categories:
+            data = {
+                'user': user.username,
+                'categories': [
+                    {
+                        'name': cat.name,
+                        'value': cat.value,
+                        'icon': getattr(cat, 'icon', None),
+                        'type': getattr(cat, 'is_spent', 'earn' if isinstance(cat, EarnCategory) else 'spent'),
+                    }
+                    for cat in categories
+                ]
             }
-            for cat in categories
-            ]
-        }
-        return JsonResponse(data)
+            return Response(data)
 
-    return JsonResponse({'error': 'Categories cannot be found'}, status=404)
+        return Response({'error': 'Categories cannot be found'}, status=status.HTTP_404_NOT_FOUND)
 
-@csrf_exempt
-@time_logger
-@check_api_token
-@require_http_methods(["GET"])
-def create_category(request):
+class CreateCategoryView(APIView):
     """
     Creates a new category (income or expense) for the user.
 
@@ -95,44 +96,46 @@ def create_category(request):
     Returns:
         JsonResponse: Status OK or error message.
     """
-    user = request.api_user
-    name_param = request.GET.get('name')
-    icon_param = request.GET.get('icon')
-    trans_type = request.GET.get('type')
 
-    # Check if icon is already a valid emoji
-    if icon_param and emoji.is_emoji(icon_param) and len(icon_param) <= 2:
-        decoded_icon = icon_param
-    else:
-        # Attempt to decode URL-encoded icon
+    @time_logger
+    def get(self, request):
+        user = request.user
+        name_param = request.query_params.get('name')
+        icon_param = request.query_params.get('icon')
+        trans_type = request.query_params.get('type')
+
+        # Check if icon is already a valid emoji
+        if icon_param and emoji.is_emoji(icon_param) and len(icon_param) <= 2:
+            decoded_icon = icon_param
+        else:
+            try:
+                decoded_icon = urllib.parse.unquote(icon_param) if icon_param else None
+                if decoded_icon and (not emoji.is_emoji(decoded_icon) or len(decoded_icon) > 2):
+                    return Response({'error': 'Icon must be a single valid emoji.'}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({'error': f'Invalid icon format: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+        validation_response = validate_required_params({
+            'name': name_param,
+            'icon': decoded_icon,
+            'type': trans_type
+        })
+
+        if validation_response:
+            return Response(validation_response.data, status=validation_response.status_code)
+
         try:
-            decoded_icon = urllib.parse.unquote(icon_param) if icon_param else None
-            if decoded_icon and (not emoji.is_emoji(decoded_icon) or len(decoded_icon) > 2):
-                return JsonResponse({'error': 'Icon must be a single valid emoji.'}, status=400)
+            if trans_type not in ['earn', 'spent']:
+                return Response({'error': 'The type parameter must be either "spent" or "earn"!'}, status=status.HTTP_400_BAD_REQUEST)
+
+            UserCategory.objects.create(
+                name=name_param,
+                icon=decoded_icon,
+                value=name_param.lower(),
+                is_spent=trans_type,
+                user=user
+            )
+            return Response({'status': 'ok'})
+
         except Exception as e:
-            return JsonResponse({'error': f'Invalid icon format: {str(e)}'}, status=400)
-
-    validation_response = validate_required_params({
-        'name': name_param,
-        'icon': decoded_icon,
-        'type': trans_type
-    })
-
-    if validation_response:
-        return validation_response
-
-    try:
-        if trans_type not in ['earn', 'spent']:
-            return JsonResponse({'error': 'The type parameter must be either "spent" or "earn"!'}, status=400)
-
-        UserCategory.objects.create(
-            name=name_param,
-            icon=decoded_icon,
-            value=name_param.lower(),
-            is_spent=trans_type,
-            user=user
-        )
-        return JsonResponse({'status': 'ok'})
-
-    except Exception as e:
-        return JsonResponse({'error': f'A problem occurred while creating a category: {str(e)}'}, status=400)
+            return Response({'error': f'A problem occurred while creating a category: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)

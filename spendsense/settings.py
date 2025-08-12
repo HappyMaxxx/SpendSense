@@ -26,7 +26,9 @@ INSTALLED_APPS = [
     'finance.apps.FinanceConfig',
     'mono.apps.MonoConfig',
     'api.apps.ApiConfig',
-    'stats.apps.StatsConfig'
+    'stats.apps.StatsConfig',
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 
 MIDDLEWARE = [
@@ -135,4 +137,13 @@ LOGGING = {
         'handlers': ['console'],
         'level': 'INFO',
     },
+}
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ]
 }

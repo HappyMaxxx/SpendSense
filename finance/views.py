@@ -1,6 +1,7 @@
 from .models import (Spents, Earnings, Account, SpentCategory,
                      EarnCategory, UserCategory, UserProfile)
 from mono.models import MonoAccount, MonoToken
+from rest_framework.authtoken.models import Token
 from .forms import RegisterUserForm, LoginUserForm, TransactionForm
 
 from mono.services.mono_api import MonobankAPI
@@ -27,7 +28,7 @@ import secrets
 from decimal import Decimal
 from decouple import config
 from .tasks import test_task
-from api.views.views import get_transactions_data
+from api.utils import get_transactions_data
 
 
 class LoginRequiredMixin(AccessMixin):
@@ -423,39 +424,40 @@ class UserExpenses(LoginRequiredMixin, View):
 
 @login_required
 def link_api(request):
+    user = request.user
+    token_obj = Token.objects.filter(user=user).first()
+    token_key = token_obj.key if token_obj else None
+
+    context = {'token_key': token_key, 'user': user}
+
     if request.method == "POST":
         action = request.POST.get('action')
 
         if action == 'ss_api':
-            set_user_api_token(request)
-            try:
-                profile = UserProfile.objects.get(user=request.user)
-            except UserProfile.DoesNotExist:
-                profile = None
-            return render(request, "finance/link_api.html", {'profile': profile})
+            if not token_key:
+                token_obj = Token.objects.create(user=user)
+                context['token_key'] = token_obj.key
+            return render(request, "finance/link_api.html", context)
 
         elif action == 'mono_api':
             token = request.POST.get("mono_token")
             try:
                 client_info = MonobankAPI.get_client_info(token)
-                mono_token, created = MonoToken.objects.update_or_create(
-                    user=request.user, defaults={"token": token}
+                MonoToken.objects.update_or_create(
+                    user=user, defaults={"token": token}
                 )
                 for account in client_info["accounts"]:
                     MonoAccount.objects.update_or_create(
-                        user=request.user,
+                        user=user,
                         mono_account_id=account["id"],
                         defaults={"name": account.get("type", "Unknown"), "balance": account["balance"] / 100}
                     )
                 return redirect("expenses")
             except Exception as e:
-                return render(request, "finance/link_api.html", {"error": str(e)})
-    
-    try:
-        profile = UserProfile.objects.get(user=request.user)
-    except UserProfile.DoesNotExist:
-        profile = None
-    return render(request, "finance/link_api.html", {'profile': profile})
+                context['error'] = str(e)
+                return render(request, "finance/link_api.html", context)
+
+    return render(request, "finance/link_api.html", context)
 
 def edit_transaction(request, transaction_id, transaction_type):
     user = request.user
@@ -611,19 +613,9 @@ def generate_unique_token():
         if not existing:
             return token
 
-def set_user_api_token(request):
-    user_profile, created = UserProfile.objects.get_or_create(user=request.user)
-    if user_profile.api_key is None:
-        user_profile.api_key = generate_unique_token()
-        user_profile.save()
-
+@login_required
 def delete_api_token(request):
-    try:
-        user_profile = UserProfile.objects.get(user=request.user)
-        user_profile.delete()
-    except:
-        user_profile = None
-    
+    Token.objects.filter(user=request.user).delete()
     return redirect('link_api')
 
 

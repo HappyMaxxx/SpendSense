@@ -1,16 +1,19 @@
 from django.urls import path
-from .views.views import check_token, profile_data
-from .views.account_views import user_accounts, create_account
-from .views.category_views import categories_get, create_category
-from .views.transaction_views import user_transactions, create_transactions
+from .views.views import CheckTokenView, ProfileDataView, ObtainAuthTokenView
+from .views.account_views import UserAccountsView, CreateAccountView
+from .views.category_views import CategoriesGetView, CreateCategoryView
+from .views.transaction_views import UserTransactionsView, CreateTransactionView
+from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
-    path('api/v1/token/check/', check_token, name='token_check'),
-    path('api/v1/accounts/get/', user_accounts, name='api_accounts'),
-    path('api/v1/accounts/create/', create_account, name='api_accounts_create'),
-    path('api/v1/transactions/', user_transactions, name='api_transactions'),
-    path('api/v1/transactions/create/', create_transactions, name='transactions_get'),
-    path('api/v1/categories/get/', categories_get, name='api_categories_get'),
-    path('api/v1/categories/create/', create_category, name='api_categories_create'),
-    path('api/v1/profile-data/', profile_data, name='profile_data'),
+    path('api/v1/token/', ObtainAuthTokenView.as_view(), name='token_create'),
+    path('api/v1/token/check/', CheckTokenView.as_view(), name='token_check'),
+    path('api/v1/accounts/', UserAccountsView.as_view(), name='user-accounts'),
+    path('api/v1/accounts/create/', CreateAccountView.as_view(), name='create-account'),
+    path('api/v1/transactions/', UserTransactionsView.as_view(), name='api_transactions'),
+    path('api/v1/transactions/create/', CreateTransactionView.as_view(), name='transactions_get'),
+    path('api/v1/categories/', CategoriesGetView.as_view(), name='api_categories_get'),
+    path('api/v1/categories/create/', CreateCategoryView.as_view(), name='api_categories_create'),
+    path('api/v1/profile-data/', ProfileDataView.as_view(), name='profile_data'),
+    path('api/v1/token/', obtain_auth_token),
 ]

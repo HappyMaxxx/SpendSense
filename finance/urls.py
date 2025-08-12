@@ -9,7 +9,6 @@ urlpatterns = [
      path('profile/', views.UserProfileView.as_view(), name='profile'),
      path('expenses/', views.UserExpenses.as_view(), name='expenses'),
      path("link_api/", views.link_api, name="link_api"),
-     path("generate_api_token/", views.set_user_api_token, name="generate_api_token"),
      path('edit-transaction/<int:transaction_id>/<int:transaction_type>/', views.edit_transaction, 
          name='edit_transaction'),
 
