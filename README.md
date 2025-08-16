@@ -13,13 +13,14 @@
   </a>
 </p>
 
-**SpendSense** is a web application for budget and expense tracking, built with Django and powered by PostgreSQL and Redis. It uses Docker for easy setup and deployment, making it simple to manage your finances.
+**SpendSense** is a web application for budget and expense tracking, built with Django and Django REST Framework (DRF) for a robust API. It is powered by PostgreSQL and Redis, and uses Docker for easy setup and deployment, making it simple to manage your finances.
 
 ## ✨ Features
 
 - Track income and expenses
 - Categorize transactions
 - View budget summaries and insights
+- RESTful API powered by Django REST Framework (DRF) for seamless integration
 - Telegram bot for managing transactions and viewing account details (optional, for enhanced interaction)
 - PostgreSQL for data storage (previously used MongoDB)
 - Redis for caching and performance
@@ -72,6 +73,7 @@ BOT_URL='https://t.me/your-bot-name'
 > - Generate a secure `DJANGO_SECRET_KEY` (e.g., using `python -c "import secrets; print(secrets.token_hex(32))"`).
 > - The `TELEGRAM_BOT_TOKEN` is optional and only required if you want to use the Telegram bot. Obtain it by creating a bot via [BotFather](https://t.me/BotFather) on Telegram.
 > - Optionally, add your local network IP (e.g., `192.168.1.6` or `192.168.0.120`) to `ALLOWED_HOSTS` to access the app from other devices on your network.
+
 ### 3. Collect Static Files
 
 Prepare static assets for production:
@@ -212,7 +214,7 @@ To access **SpendSense** or the Flower dashboard from another device on your loc
 
 ## 📚 API Documentation
 
-Full API documentation is available in [API.md](./API.md)
+The **SpendSense** API is built using Django REST Framework (DRF), providing a robust and scalable RESTful interface for managing budgets, transactions, and other financial data. Full API documentation, including endpoints, request/response formats, and authentication details, is available in [API.md](./API.md).
 
 ## 🛠️ API Client
 
@@ -220,7 +222,7 @@ For easier interaction with the **SpendSense** API, you can use the dedicated [S
 
 - **Repository**: [https://github.com/HappyMaxxx/SpendSense-API-Client](https://github.com/HappyMaxxx/SpendSense-API-Client)
 - **Features**: 
-  - Simplified API calls for creating, updating, and retrieving financial data.
+  - Simplified API calls for creating, updating, and retrieving financial data via DRF endpoints.
   - Command-line interface for quick access to SpendSense functionality.
   - Well-documented examples to get started.
 
