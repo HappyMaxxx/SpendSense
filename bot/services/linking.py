@@ -3,16 +3,26 @@ import asyncio
 from aiogram import types
 from django.db import transaction
 from finance.models import UserProfile
+from rest_framework.authtoken.models import Token
 from aiogram.fsm.context import FSMContext
 from keyboards.main import get_linked_user_keyboard
 from states import UserLinkState
 
 logger = logging.getLogger(__name__)
 
+async def profile_to_token(profile):
+    user = profile.user
+    token = Token.objects.get(user=user)
+    return token.key
+
 def get_user_profile_sync(token: str = None, tg_id: int = None):
     try:
         if token is not None:
-            return UserProfile.objects.get(api_key=token)
+            try:
+                user = Token.objects.get(key=token).user
+                return user.user_profile
+            except Token.DoesNotExist:
+                return None
         elif tg_id is not None:
             return UserProfile.objects.get(telegram_id=tg_id)
         else:

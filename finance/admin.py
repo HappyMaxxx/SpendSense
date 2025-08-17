@@ -44,5 +44,5 @@ class UserCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'api_key', 'telegram_id')
+    list_display = ('user', 'telegram_id')
     list_display_links = ('user',)

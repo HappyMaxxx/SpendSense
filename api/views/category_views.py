@@ -6,7 +6,7 @@ from django.http import JsonResponse
 
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
-from api.decorators import check_api_token, time_logger
+from api.decorators import time_logger
 from api.validation import validate_required_params
 
 import urllib.parse

@@ -558,9 +558,9 @@ def bot_redirect(request):
         bot_url = None
 
     if bot_url:
-        user_profile = UserProfile.objects.get(user=request.user)
+        token = Token.objects.get(user=request.user)
         try:
-            unique_code = user_profile.api_key
+            unique_code = token.key
         except:
             unique_code = None
 
@@ -605,13 +605,6 @@ def delete_transaction(request, transaction_id, transaction_type):
     account.save()
     transaction.delete()
     return redirect('expenses')
-
-def generate_unique_token():
-    while True:
-        token = secrets.token_hex(16)
-        existing = UserProfile.objects.filter(api_key=token).exists()
-        if not existing:
-            return token
 
 @login_required
 def delete_api_token(request):

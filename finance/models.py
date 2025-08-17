@@ -83,6 +83,6 @@ class UserCategory(models.Model):
 
 
 class UserProfile(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_profile')
-    api_key = models.CharField(max_length=32, unique=True, blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='user_profile')
+    # api_key = models.CharField(max_length=32, unique=True, blank=True, null=True)
     telegram_id = models.BigIntegerField(null=True, blank=True, unique=True)

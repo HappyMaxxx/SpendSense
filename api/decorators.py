@@ -8,27 +8,24 @@ from finance.models import UserProfile
 
 logger = logging.getLogger(__name__)
 
-def check_api_token(function):
-    @wraps(function)
-    def wrapper(request, *args, **kwargs):
-        api_token = request.headers.get('Authorization', '')
-
-        if not api_token:
-            return JsonResponse({'error': 'Token not given'}, status=401)
-        
-        if api_token.startswith('Bearer '):
-            api_token = api_token[7:]
-        else:
-            return JsonResponse({'error': 'Token must statr with Bearer'}, status=401)
-        
-        try:
-            profile = UserProfile.objects.get(api_key=api_token)
-            request.api_user = profile.user
-        except UserProfile.DoesNotExist:
-            return JsonResponse({'error': 'Invalid token'}, status=401)
-        
-        return function(request, *args, **kwargs)
-    return wrapper
+# This function is no longer used due to the transition to DRF.
+# def check_api_token(function):
+#     @wraps(function)
+#     def wrapper(request, *args, **kwargs):
+#         api_token = request.headers.get('Authorization', '')
+#         if not api_token:
+#             return JsonResponse({'error': 'Token not given'}, status=401)
+#         if api_token.startswith('Bearer '):
+#             api_token = api_token[7:]
+#         else:
+#             return JsonResponse({'error': 'Token must statr with Bearer'}, status=401)
+#         try:
+#             profile = UserProfile.objects.get(api_key=api_token)
+#             request.api_user = profile.user
+#         except UserProfile.DoesNotExist:
+#             return JsonResponse({'error': 'Invalid token'}, status=401)
+#         return function(request, *args, **kwargs)
+#     return wrapper
 
 
 def time_logger(function):
