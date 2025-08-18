@@ -3,11 +3,15 @@ from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 from states import UserLinkState, TransactionState, CategoryCreationState
 from keyboards.category import navigation_keyboard, build_inline_keyboard_cat
+from rest_framework.authtoken.models import Token
 from keyboards.account import build_inline_keyboard_acc
-from services.linking import get_user_profile_sync
+from services.linking import get_user_profile_sync, profile_to_token
 import aiohttp
 import asyncio
 from .transaction import create_transaction
+import logging
+
+logger = logging.getLogger(__name__)
 
 category_router = Router()
 
@@ -123,7 +127,7 @@ async def process_category_name(message: Message, state: FSMContext):
         "icon": icon,
         "type": category_type
     }
-    headers = {"Authorization": f"Bearer {profile.api_key}"}
+    headers = {"Authorization": f"Token {await profile_to_token(profile)}"}
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params, headers=headers) as response:
@@ -195,13 +199,14 @@ async def process_amount(message: Message, state: FSMContext):
         await state.set_state(TransactionState.waiting_for_account)
 
         url = 'http://web:8000/api/v1/accounts/'
-        headers = {"Authorization": f"Bearer {profile.api_key}"}
+        headers = {"Authorization": f"Token {await profile_to_token(profile)}"}
 
         async with aiohttp.ClientSession() as session:
             async with session.get(url, headers=headers) as response:
                 if response.status == 200:
                     data = await response.json()
                     accs = data['accounts']
+                    logger.info(f'{accs}')
                     keyboard = build_inline_keyboard_acc(accs)
                     await message.answer("Select an account:", reply_markup=keyboard)
                 else:

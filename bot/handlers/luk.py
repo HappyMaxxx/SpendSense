@@ -5,7 +5,7 @@ import asyncio
 import aiohttp
 from aiogram import types
 from aiogram.fsm.context import FSMContext
-from services.linking import get_user_profile_sync
+from services.linking import get_user_profile_sync, profile_to_token
 from states import UserLinkState
 from keyboards.category import build_inline_keyboard_cat
 
@@ -30,7 +30,7 @@ async def keyboard_buttons_handler(message: types.Message, state: FSMContext):
 async def profile_handler(message: types.Message, profile):
     url = 'http://web:8000/api/v1/profile-data/'
     headers = {
-        "Authorization": f"Bearer {profile.api_key}"
+        "Authorization": f"Token {await profile_to_token(profile)}"
     }
 
     async with aiohttp.ClientSession() as session:
@@ -49,8 +49,8 @@ async def profile_handler(message: types.Message, profile):
                 await message.answer("❌ Failed to get profile data.")
 
 async def expense_handler(message: types.Message, profile, state: FSMContext):
-    url = 'http://web:8000/api/v1/categories/get/'
-    headers = {"Authorization": f"Bearer {profile.api_key}"}
+    url = 'http://web:8000/api/v1/categories/'
+    headers = {"Authorization": f"Token {await profile_to_token(profile)}"}
     params = {'type': 'spent'}
 
     async with aiohttp.ClientSession() as session:
@@ -67,9 +67,9 @@ async def expense_handler(message: types.Message, profile, state: FSMContext):
                 await message.answer("❌ Failed to get spent categories.")
 
 async def income_handler(message: types.Message, profile, state: FSMContext):
-    url = 'http://web:8000/api/v1/categories/get/'
+    url = 'http://web:8000/api/v1/categories/'
     headers = {
-        "Authorization": f"Bearer {profile.api_key}"
+        "Authorization": f"Token {await profile_to_token(profile)}"
     }
     params = {
         'type': 'earn'
@@ -86,4 +86,4 @@ async def income_handler(message: types.Message, profile, state: FSMContext):
                 keyboard = build_inline_keyboard_cat(cats, type='e')
                 await message.answer("Select a category:", reply_markup=keyboard)
             else:
-                await message.answer("❌ Failed to get spent categories.")
+                await message.answer("❌ Failed to get earn categories.")

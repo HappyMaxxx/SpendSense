@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 from states import UserLinkState
 import aiohttp
 import asyncio
-from services.linking import get_user_profile_sync
+from services.linking import get_user_profile_sync, profile_to_token
 
 transaction_router = Router()
 
@@ -40,7 +40,7 @@ async def create_transaction(callback_query: CallbackQuery, state: FSMContext, a
         "amount": str(amount),
         "type": category_type
     }
-    headers = {"Authorization": f"Bearer {profile.api_key}"}
+    headers = {"Authorization": f"Token {await profile_to_token(profile)}"}
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, params=params, headers=headers) as response:

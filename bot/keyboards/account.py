@@ -3,8 +3,8 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 def build_inline_keyboard_acc(accounts: list[dict], row_width: int = 2) -> InlineKeyboardMarkup:
     buttons = [
         InlineKeyboardButton(
-            text=acc['account'],
-            callback_data=f"account_{acc['account']}"
+            text=acc['name'],
+            callback_data=f"account_{acc['name']}"
         )
         for acc in accounts
     ]
